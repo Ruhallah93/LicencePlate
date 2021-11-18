@@ -73,20 +73,20 @@ class ImageNoise(Noise):
 class LightNoise(Noise):
     # r is degree of light
     # light_param: [-255, 255], light noise parameter
-    def __init__(self, kernel_size=7, light_param=100):
+    def __init__(self, blur_kernel_size=7, light_param=100):
         super()
-        self.kernel_size = kernel_size
+        self.blur_kernel_size = blur_kernel_size
         self.light_param = light_param
 
     def apply(self, img):
         # cv2.imshow("s", img)
 
-        if self.kernel_size > 0:
-            if self.kernel_size % 2 == 0:
-                self.kernel_size += 1
-                print("Kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
-                      self.kernel_size)
-            img = cv2.medianBlur(img, self.kernel_size)
+        if self.blur_kernel_size > 0:
+            if self.blur_kernel_size % 2 == 0:
+                self.blur_kernel_size += 1
+                print("blur_kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
+                      self.blur_kernel_size)
+            img = cv2.medianBlur(img, self.blur_kernel_size)
 
         # Change color space, BGR -> YUV
         yuv_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
@@ -136,7 +136,7 @@ class CircularLightNoise(Noise):
         if self.blur_kernel_size > 0:
             if self.blur_kernel_size % 2 == 0:
                 self.blur_kernel_size += 1
-                print("Kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
+                print("blur_kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
                       self.blur_kernel_size)
             img = cv2.medianBlur(img, self.blur_kernel_size)
 
@@ -391,9 +391,14 @@ def get_new_plate():
 
     imageNoise7 = ImageNoise('./noise/noise7.png')
     imageNoise8 = ImageNoise('./noise/noise8.png')
-    lightNoise = LightNoise(kernel_size=5, light_param=-200)
-    circularLightNoise = CircularLightNoise(blur_kernel_size=5, light_param=100, n_circle=2,
-                                            r_circle=25, kernel_sigma=0.7)
+    lightNoise = LightNoise(blur_kernel_size=7, light_param=-150)
+    # r_circle: [15, 30]
+    # light_param: [-210, 210]
+    # n_circle: [2, 4]
+    # blur_kernel_size: [3, 11] odd
+    # kernel_sigma!?
+    circularLightNoise = CircularLightNoise(blur_kernel_size=5, light_param=-150, n_circle=2,
+                                            r_circle=30, kernel_sigma=0.7)
     # lightNoise2 = ...
     noises2 = [imageNoise7, imageNoise8, lightNoise, circularLightNoise]  # ,lightNoise10]
 
