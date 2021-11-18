@@ -17,6 +17,8 @@ from PIL import Image
 import os
 from datetime import datetime
 
+import scipy.stats as st
+
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
 letters = ["BE", "TE", "JIM", "DAL", "RE", "SIN", "SAD", "TA", "EIN", "GHAF", "LAM", "MIM", "NON", "VAV", "HE",
@@ -26,6 +28,9 @@ letter_to_class = {"ALEF": 10, "BE": 11, "PE": 12, "TE": 13, "SE": 14, "JIM": 15
                    "SIN": 24, "SHIN": 25, "SAD": 26, "ZAD": 27, "TA": 28, "ZA": 29, "EIN": 30, "GHEIN": 31, "FE": 32,
                    "GHAF": 33, "KAF": 34, "GAF": 35, "LAM": 36, "MIM": 37, "NON": 38,
                    "VAV": 39, "HE": 40, "YE": 41, "WHEEL": 42}
+
+# ref: https://docs.opencv.org/3.4.12/dc/dd3/tutorial_gausian_median_blur_bilateral_filter.html
+smoothing_method = {"blur": 0, "GaussianBlur": 1, "medianBlur": 2, "bilateralFilter": 3}
 
 
 class Noise(object):
@@ -67,66 +72,107 @@ class ImageNoise(Noise):
 
 class LightNoise(Noise):
     # r is degree of light
-    def __init__(self, mean=0, var=0.1):
+    # light_param: [-255, 255], light noise parameter
+    def __init__(self, kernel_size=7, light_param=100):
         super()
-        self.mean = mean
-        self.var = var
+        self.kernel_size = kernel_size
+        self.light_param = light_param
 
     def apply(self, img):
+        # cv2.imshow("s", img)
+
+        if self.kernel_size > 0:
+            if self.kernel_size % 2 == 0:
+                self.kernel_size += 1
+                print("Kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
+                      self.kernel_size)
+            img = cv2.medianBlur(img, self.kernel_size)
+
+        # Change color space, BGR -> YUV
         yuv_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
 
         # Add noise to Y channel (Y_channel = yuv_img[:, :, 0])
-        # y_noise = cv2.medianBlur(yuv_img[:, :, 0], kernel_size)
-        y_noise = yuv_img[:, :, 0] - 2
+        # int16 for support overflow and negative values
+        y_noise = np.array(yuv_img[:, :, 0], dtype=np.int16) + self.light_param
+
+        # Overflow handling
+        if self.light_param > 0:
+            y_noise[y_noise > 255] = 255
+        else:
+            y_noise[y_noise < 0] = 0
+
+        y_noise = np.array(y_noise, dtype=np.uint8)
         yuv_img[:, :, 0] = y_noise
 
         img_noise = cv2.cvtColor(yuv_img, cv2.COLOR_YUV2BGR)
 
         # Remove, just for test
-        cv2.imshow("s", img)
-        cv2.imshow("d", img_noise)
-        cv2.waitKey(1000)
+        # cv2.imshow("d", img_noise)
+        # cv2.waitKey()
 
         return img_noise
 
 
-def noisy(noise_typ, image, mean=0, var=0.1):
-    if noise_typ == "gauss":
-        row, col = image.shape
-        sigma = var ** 0.5
-        gauss = np.random.normal(mean, sigma, (row, col))
-        gauss = gauss.reshape(row, col)
-        noisy = image + gauss
-        return noisy
-    elif noise_typ == "s&p":
-        row, col = image.shape
-        s_vs_p = 0.5
-        amount = 0.004
-        out = np.copy(image)
-        # Salt mode
-        num_salt = np.ceil(amount * image.size * s_vs_p)
-        coords = [np.random.randint(0, i - 1, int(num_salt))
-                  for i in image.shape]
-        out[coords] = 1
+def gaussian_kernel(kernel_size=25, mu=0.0, sigma=1.0):
+    x, y = np.meshgrid(np.linspace(-1, 1, kernel_size), np.linspace(-1, 1, kernel_size))
+    d = np.sqrt(x * x + y * y)
+    return np.exp(-((d - mu) ** 2 / (2.0 * sigma ** 2)))
 
-        # Pepper mode
-        num_pepper = np.ceil(amount * image.size * (1. - s_vs_p))
-        coords = [np.random.randint(0, i - 1, int(num_pepper))
-                  for i in image.shape]
-        out[coords] = 0
-        return out
 
-    elif noise_typ == "poisson":
-        vals = len(np.unique(image))
-        vals = 2 ** np.ceil(np.log2(vals))
-        noisy = np.random.poisson(image * vals) / float(vals)
-        return noisy
-    elif noise_typ == "speckle":
-        row, col = image.shape
-        gauss = np.random.randn(row, col)
-        gauss = gauss.reshape(row, col)
-        noisy = image + image * gauss
-        return noisy
+class CircularLightNoise(Noise):
+    # light_param: [-255, 255], light noise parameter
+    # circular_light: number of circular lights
+    def __init__(self, blur_kernel_size=5, light_param=100, n_circle=2, r_circle=25, kernel_sigma=0.7):
+        super()
+        self.blur_kernel_size = blur_kernel_size
+        self.light_param = light_param
+        self.n_circle = n_circle
+        self.r_circle = r_circle
+        self.kernel_sigma = kernel_sigma
+
+    def apply(self, img):
+        # cv2.imshow("s", img)
+
+        if self.blur_kernel_size > 0:
+            if self.blur_kernel_size % 2 == 0:
+                self.blur_kernel_size += 1
+                print("Kernel_size for medianBlur should be a odd number, Alternative kernel_size: ",
+                      self.blur_kernel_size)
+            img = cv2.medianBlur(img, self.blur_kernel_size)
+
+        # Change color space, BGR -> YUV
+        yuv_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+
+        # Add noise to Y channel (Y_channel = yuv_img[:, :, 0])
+        height, width, _ = yuv_img.shape
+        noise = np.zeros((height, width))
+
+        # Create noise
+        for i in range(self.n_circle):
+            x = np.random.randint(0, width - self.r_circle * 2)
+            y = np.random.randint(0, height - self.r_circle * 2)
+            noise[y:y + self.r_circle * 2, x:x + self.r_circle * 2] += \
+                gaussian_kernel(kernel_size=self.r_circle * 2, sigma=self.kernel_sigma) * self.light_param
+
+        # int16 for support overflow and negative values
+        y_noise = np.array(yuv_img[:, :, 0], dtype=np.int16) + noise
+
+        # Overflow handling
+        if self.light_param > 0:
+            y_noise[y_noise > 255] = 255
+        else:
+            y_noise[y_noise < 0] = 0
+
+        y_noise = np.array(y_noise, dtype=np.uint8)
+        yuv_img[:, :, 0] = y_noise
+
+        img_noise = cv2.cvtColor(yuv_img, cv2.COLOR_YUV2BGR)
+
+        # Remove, just for test
+        # cv2.imshow("d", img_noise)
+        # cv2.waitKey()
+
+        return img_noise
 
 
 def get_perspective_matrix(width, height, prespectiveType: int = 1,
@@ -345,8 +391,11 @@ def get_new_plate():
 
     imageNoise7 = ImageNoise('./noise/noise7.png')
     imageNoise8 = ImageNoise('./noise/noise8.png')
-    lightNoise = LightNoise(mean=random.randint(-5, 5), var=random.randint(5, 10))
-    noises2 = [imageNoise7, imageNoise8, lightNoise]
+    lightNoise = LightNoise(kernel_size=5, light_param=-200)
+    circularLightNoise = CircularLightNoise(blur_kernel_size=5, light_param=100, n_circle=2,
+                                            r_circle=25, kernel_sigma=0.7)
+    # lightNoise2 = ...
+    noises2 = [imageNoise7, imageNoise8, lightNoise, circularLightNoise]  # ,lightNoise10]
 
     r = random.randint(0, 3)
     noises = []
@@ -382,6 +431,9 @@ if __name__ == '__main__':
         perspective_plate = Image.fromarray(perspective_plate)
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
+
+        # Remove comments ****
+
         # perspective_plate.save('output/' + name + '$' + _id + ".png")
 
         # label_file = open("{}.txt".format('output/' + name + '$' + _id + "txt"), 'w')
