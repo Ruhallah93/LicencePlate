@@ -320,13 +320,13 @@ def get_yolo_data():
     return plate, perspective_plate, for_bounding_boxes, mergedBoxes
 
 def get_unet_data():
-    perspective_plate, for_bounding_boxes = get_new_plate()
+    plate, perspective_plate, for_bounding_boxes = get_new_plate()
     masked = get_mask(for_bounding_boxes)
     return plate, perspective_plate, masked
 
 def generate_and_save_palets(n:int=1000):
     random.seed(datetime.now())
-    
+
     counter = 0
     for i in range(n):
         plate, perspective_plate, for_bounding_boxes, merged_boxes = get_yolo_data()
@@ -360,17 +360,41 @@ def generate_and_save_palets(n:int=1000):
         label_file.close()
     print("fails: ", counter)
 
+def generate_and_save_palets_unet(n:int=1000, dataType='train'):
+    random.seed(datetime.now())
+
+    for i in range(n):
+        plate, perspective_plate, mask = get_unet_data()
+
+        perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
+        perspective_plate = Image.fromarray(perspective_plate)
+        _id = uuid.uuid4().__str__()
+        name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
+        perspective_plate.save('output/unetData/{}/images/'.format(dataType) + name + '$' + _id + ".png")
+
+        masked = Image.fromarray(np.abs(255 - mask))
+        masked.save('output/unetData/{}/masks/'.format(dataType) + name + '$' + _id + ".png")
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', nargs='+', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', nargs='+', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
+    parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
-    
-    size = opt.size[0]
-    max_threads = opt.workers
-    
-    for i in range(max_threads):
-        chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads) 
-        t = Thread(target=generate_and_save_palets, args=[chunk_size])
-        t.start()
-    
+    if opt.model == 'yolo':
+        size = opt.size[0]
+        max_threads = opt.workers
+
+        for i in range(max_threads):
+            chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads)
+            t = Thread(target=generate_and_save_palets, args=[chunk_size])
+            t.start()
+    elif opt.model == 'unet':
+        size = opt.size[0]
+        max_threads = opt.workers
+
+        for i in range(max_threads):
+            chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads)
+            t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.type))
+            t.start()
