@@ -18,6 +18,10 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+import argparse
+
+from tqdm.auto import tqdm
+
 import scipy.stats as st
 
 # Characters of Letters and Numbers in Plates
@@ -422,48 +426,60 @@ def get_new_plate():
 
     return plate, perspective_plate, for_bounding_boxes, mergedBoxes
 
+def main(images_path, labels_path, num_of_imgs):
+  
+  random.seed(datetime.now())
+
+  counter = 0
+  for i in tqdm(range(num_of_imgs)):
+      plate, perspective_plate, for_bounding_boxes, merged_boxes = get_new_plate()
+      
+      # plt.figure()
+      # plt.imshow(perspective_plate)
+      # plt.show()
+      
+      if len(merged_boxes) != 8:
+          counter += 1
+          # print(len(merged_boxes))
+          # for box in merged_boxes:
+          #     x, y, w, h = box
+          #     cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
+          # cv2.imshow('123', perspective_plate)
+          # cv2.waitKey(1000)
+          continue
+
+      # perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
+      # perspective_plate = Image.fromarray(perspective_plate)
+      
+      # _id = uuid.uuid4().__str__()
+      name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
+
+      # Remove comments ****
+
+      cv2.imwrite(os.path.join(images_path, '{}.png'.format(name)), perspective_plate)
+
+      label_file = open(os.path.join(labels_path, "{}.txt".format(name)), 'w')
+      
+      height, width = perspective_plate.shape[0], perspective_plate.shape[1]
+      
+      p1, p2, p3 = name.split("_")
+      classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6], plate[7]]
+      for i, box in enumerate(sorted(merged_boxes, key=lambda x: x[0])):
+          x, y, w, h = box
+          x_center = int((x + (0.5) * w)) / width
+          y_center = int((y + (0.5) * h)) / height
+          label_file.write("{} {} {} {} {}\n".format(classes[i], x_center, y_center, w / width, h / height))
+      
+      label_file.close()
+  print("fails: ", counter)
+
 
 if __name__ == '__main__':
-    random.seed(datetime.now())
-
-    counter = 0
-    for i in range(5):
-        plate, perspective_plate, for_bounding_boxes, merged_boxes = get_new_plate()
-        
-        # plt.figure()
-        # plt.imshow(perspective_plate)
-        # plt.show()
-        cv2.imwrite("{}.png".format(i), perspective_plate)
-
-        if len(merged_boxes) != 8:
-            counter += 1
-            print(len(merged_boxes))
-            for box in merged_boxes:
-                x, y, w, h = box
-                cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
-            # cv2.imshow('123', perspective_plate)
-            # cv2.waitKey(1000)
-            continue
-
-        perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
-        perspective_plate = Image.fromarray(perspective_plate)
-        _id = uuid.uuid4().__str__()
-        name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
-
-        # Remove comments ****
-
-        # perspective_plate.save('output/' + name + '$' + _id + ".png")
-
-        # label_file = open("{}.txt".format('output/' + name + '$' + _id + "txt"), 'w')
-        # height, width = perspective_plate.height, perspective_plate.width
-        #
-        # p1, p2, p3 = name.split("_")
-        # classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6], plate[7]]
-        # for i, box in enumerate(sorted(merged_boxes, key=lambda x: x[0])):
-        #     x, y, w, h = box
-        #     x_center = int((x + (0.5) * w)) / width
-        #     y_center = int((y + (0.5) * h)) / height
-        #     label_file.write("{} {} {} {} {}\n".format(classes[i], x_center, y_center, w / width, h / height))
-        #
-        # label_file.close()
-    print("fails: ", counter)
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--images_path", default="/content/images")
+    parser.add_argument("--labels_path", default="/content/labels")
+    parser.add_argument("--num_of_imgs", type=int)
+    opt = parser.parse_args()
+    
+    main(**vars(opt))
