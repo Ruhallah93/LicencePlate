@@ -4,6 +4,8 @@ import numpy as np
 import cv2
 import functools
 
+from threading import Thread
+
 from enum import Enum
 import numpy as np
 import cv2
@@ -479,7 +481,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--images_path", default="/content/images")
     parser.add_argument("--labels_path", default="/content/labels")
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument("--num_of_imgs", type=int)
     opt = parser.parse_args()
     
-    main(**vars(opt))
+    max_threads = opt.workers
+    size = opt.num_of_imgs
+
+    args_dict = vars(opt)
+    del args_dict["workers"]
+
+    for i in range(max_threads):
+      chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads) 
+      args_dict.update({"num_of_imgs": chunk_size})
+      t = Thread(target=main, kwargs=args_dict)
+      t.start()
