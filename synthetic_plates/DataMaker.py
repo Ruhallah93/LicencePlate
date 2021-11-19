@@ -11,11 +11,12 @@ from PIL import Image
 import functools
 import numpy as np
 import cv2
-# from google.colab.patches import cv2_imshow
+from google.colab.patches import cv2_imshow
 import random
 from PIL import Image
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 import scipy.stats as st
 
@@ -362,7 +363,7 @@ def get_new_plate():
         background = Image.open("./templates/template-base.png").convert("RGBA")
     new_plate.paste(background, (0, 0))
 
-    # adding glyph images with 11 pixel margin
+    # adding glyph images with 3 pixel margin
     w = 0
     for i, glyph in enumerate(glyph_images[:-2]):
         if i == 2:
@@ -387,20 +388,26 @@ def get_new_plate():
     imageNoise4 = ImageNoise('./noise/noise4.png')
     imageNoise5 = ImageNoise('./noise/noise5.png')
     imageNoise6 = ImageNoise('./noise/noise6.png')
-    noises1 = [imageNoise1, imageNoise2, imageNoise3, imageNoise4, imageNoise5, imageNoise6]
+    imageNoise9 = ImageNoise('./noise/noise9.png')
+    noises1 = [imageNoise1, imageNoise2, imageNoise3, imageNoise4, imageNoise5, imageNoise6, imageNoise9]
 
     imageNoise7 = ImageNoise('./noise/noise7.png')
     imageNoise8 = ImageNoise('./noise/noise8.png')
+    imageNoise10 = ImageNoise('./noise/noise10.png')
     lightNoise = LightNoise(blur_kernel_size=7, light_param=-150)
-    # r_circle: [15, 30]
-    # light_param: [-210, 210]
-    # n_circle: [2, 4]
-    # blur_kernel_size: [3, 11] odd
+    
+    r_circle = random.randint(15, 30)
+    light_param = random.randint(-150, 150)
+    n_circle = random.choice([2, 3, 4])
+    blur_kernel_size = random.choice([3, 5, 7, 9, 11])
     # kernel_sigma!?
-    circularLightNoise = CircularLightNoise(blur_kernel_size=5, light_param=-150, n_circle=2,
-                                            r_circle=30, kernel_sigma=0.7)
+
+
+
+    circularLightNoise = CircularLightNoise(blur_kernel_size=blur_kernel_size, light_param=light_param, n_circle=n_circle,
+                                            r_circle=r_circle, kernel_sigma=0.7)
     # lightNoise2 = ...
-    noises2 = [imageNoise7, imageNoise8, lightNoise, circularLightNoise]  # ,lightNoise10]
+    noises2 = [imageNoise7, imageNoise8, imageNoise10, lightNoise, circularLightNoise]  # ,lightNoise10]
 
     r = random.randint(0, 3)
     noises = []
@@ -420,8 +427,14 @@ if __name__ == '__main__':
     random.seed(datetime.now())
 
     counter = 0
-    for i in range(100):
+    for i in range(5):
         plate, perspective_plate, for_bounding_boxes, merged_boxes = get_new_plate()
+        
+        # plt.figure()
+        # plt.imshow(perspective_plate)
+        # plt.show()
+        cv2.imwrite("{}.png".format(i), perspective_plate)
+
         if len(merged_boxes) != 8:
             counter += 1
             print(len(merged_boxes))
