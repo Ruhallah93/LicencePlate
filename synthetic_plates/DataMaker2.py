@@ -3,18 +3,9 @@ import uuid
 from threading import Thread
 import argparse
 
-import numpy as np
-import cv2
-import functools
-
-from enum import Enum
-import numpy as np
-import cv2
-from PIL import Image
 import functools
 import numpy as np
 import cv2
-# from google.colab.patches import cv2_imshow
 import random
 from PIL import Image
 import os
@@ -379,12 +370,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', nargs='+', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', nargs='+', type=int, default=10, help='number of threads to run')
-    parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
+    parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
     if opt.model == 'yolo':
         size = opt.size[0]
-        max_threads = opt.workers
+        max_threads = opt.workers[0]
 
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads)
@@ -392,8 +383,9 @@ if __name__ == '__main__':
             t.start()
     elif opt.model == 'unet':
         size = opt.size[0]
-        max_threads = opt.workers
-
+        max_threads = opt.workers[0]
+        print(size)
+        print(max_threads)
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads)
             t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.type))
