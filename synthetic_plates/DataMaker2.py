@@ -493,8 +493,8 @@ def generate_and_save_palets_unet(n: int = 1000, dataType='train'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', nargs='+', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', nargs='+', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
