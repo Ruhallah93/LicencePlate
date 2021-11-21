@@ -446,9 +446,13 @@ def generate_and_save_palets(n: int = 1000):
         perspective_plate = Image.fromarray(perspective_plate)
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
-        perspective_plate.save('output/' + name + '$' + _id + ".png")
 
-        label_file = open("{}.txt".format('output/' + name + '$' + _id + "txt"), 'w')
+        directory = 'output/yoloData/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        perspective_plate.save(directory + name + '$' + _id + ".png")
+
+        label_file = open("{}.txt".format(directory + name + '$' + _id + "txt"), 'w')
         height, width = perspective_plate.height, perspective_plate.width
 
         p1, p2, p3 = name.split("_")
@@ -473,10 +477,18 @@ def generate_and_save_palets_unet(n: int = 1000, dataType='train'):
         perspective_plate = Image.fromarray(perspective_plate)
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
-        perspective_plate.save('output/unetData/{}/images/'.format(dataType) + name + '$' + _id + ".png")
+
+        directory = 'output/unetData/{}/images/'.format(dataType)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        perspective_plate.save(directory + name + '$' + _id + ".png")
 
         masked = Image.fromarray(np.abs(255 - mask))
-        masked.save('output/unetData/{}/masks/'.format(dataType) + name + '$' + _id + ".png")
+
+        directory = 'output/unetData/{}/masks/'.format(dataType)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        masked.save(directory + name + '$' + _id + ".png")
 
 
 if __name__ == '__main__':
@@ -487,18 +499,16 @@ if __name__ == '__main__':
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
     if opt.model == 'yolo':
-        size = opt.size[0]
-        max_threads = opt.workers[0]
+        size = opt.size
+        max_threads = opt.workers
 
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
             t = Thread(target=generate_and_save_palets, args=[chunk_size])
             t.start()
     elif opt.model == 'unet':
-        size = opt.size[0]
-        max_threads = opt.workers[0]
-        print(size)
-        print(max_threads)
+        size = opt.size
+        max_threads = opt.workers
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
             t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.type))
