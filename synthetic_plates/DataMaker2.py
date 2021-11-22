@@ -499,16 +499,16 @@ if __name__ == '__main__':
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
     if opt.model == 'yolo':
-        size = opt.size[0]
-        max_threads = opt.workers[0]
+        size = opt.size
+        max_threads = opt.workers
 
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
             t = Thread(target=generate_and_save_palets, args=[chunk_size])
             t.start()
     elif opt.model == 'unet':
-        size = opt.size[0]
-        max_threads = opt.workers[0]
+        size = opt.size
+        max_threads = opt.workers
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
             t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.type))
