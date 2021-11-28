@@ -1,30 +1,24 @@
 import uuid
 
 import numpy as np
-import cv2
-import functools
-
-from threading import Thread
-
-from enum import Enum
-import numpy as np
-import cv2
-from PIL import Image
-import functools
-import numpy as np
-import cv2
-from google.colab.patches import cv2_imshow
 import random
+
+import cv2
 from PIL import Image
-import os
-from datetime import datetime
 import matplotlib.pyplot as plt
 
-import argparse
+import functools
+import scipy.stats as st
 
+import os
+from datetime import datetime
+from threading import Thread
+import argparse
+from enum import Enum
 from tqdm.auto import tqdm
 
-import scipy.stats as st
+# from google.colab.patches import cv2_imshow
+
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -37,7 +31,7 @@ letter_to_class = {"ALEF": 10, "BE": 11, "PE": 12, "TE": 13, "SE": 14, "JIM": 15
                    "VAV": 39, "HE": 40, "YE": 41, "WHEEL": 42}
 
 # ref: https://docs.opencv.org/3.4.12/dc/dd3/tutorial_gausian_median_blur_bilateral_filter.html
-smoothing_method = {"blur": 0, "GaussianBlur": 1, "medianBlur": 2, "bilateralFilter": 3}
+blur_method = {"blur": 0, "gaussianBlur": 1, "medianBlur": 2, "bilateralFilter": 3}
 
 
 class Noise(object):
@@ -76,6 +70,21 @@ class ImageNoise(Noise):
 
         return open_cv_image
 
+
+class BlurNoise(Noise):
+    def __init__(self, blur_type='gaussian', blur_kernel_size=7, blur_sigma=10):
+        super()
+        self.blur_type = blur_type
+        self.blur_kernel_size = blur_kernel_size
+        self.blur_sigma = blur_sigma
+
+    def apply(self, img):
+        cv2.imshow("s", img)
+        cv2.imshow('dd', cv2.GaussianBlur(img, ksize=self.blur_kernel_size, sigmaX=self.blur_sigma))
+        return {
+            'gaussian': cv2.GaussianBlur(img, ksize=self.blur_kernel_size, sigmaX=self.blur_sigma),
+            'median': cv2.medianBlur(img, ksize=self.blur_kernel_size)
+        }[self.blur_type]
 
 class LightNoise(Noise):
     # r is degree of light
@@ -401,19 +410,17 @@ def get_new_plate():
     imageNoise8 = ImageNoise('./noise/noise8.png')
     imageNoise10 = ImageNoise('./noise/noise10.png')
     lightNoise = LightNoise(blur_kernel_size=7, light_param=-150)
-    
+
     r_circle = random.randint(15, 30)
     light_param = random.randint(-150, 150)
     n_circle = random.choice([2, 3, 4])
     blur_kernel_size = random.choice([3, 5, 7, 9, 11])
     # kernel_sigma!?
 
-
-
-    circularLightNoise = CircularLightNoise(blur_kernel_size=blur_kernel_size, light_param=light_param, n_circle=n_circle,
-                                            r_circle=r_circle, kernel_sigma=0.7)
+    circularLightNoise = CircularLightNoise(blur_kernel_size=blur_kernel_size, light_param=light_param,
+                                            n_circle=n_circle, r_circle=r_circle, kernel_sigma=0.7)
     # lightNoise2 = ...
-    noises2 = [imageNoise7, imageNoise8, imageNoise10, lightNoise, circularLightNoise]  # ,lightNoise10]
+    noises2 = [imageNoise7, imageNoise8, imageNoise10, lightNoise, circularLightNoise]
 
     r = random.randint(0, 3)
     noises = []
@@ -428,63 +435,63 @@ def get_new_plate():
 
     return plate, perspective_plate, for_bounding_boxes, mergedBoxes
 
+
 def main(images_path, labels_path, num_of_imgs):
-  
-  random.seed(datetime.now())
+    random.seed(datetime.now())
 
-  counter = 0
-  for i in tqdm(range(num_of_imgs)):
-      plate, perspective_plate, for_bounding_boxes, merged_boxes = get_new_plate()
-      
-      # plt.figure()
-      # plt.imshow(perspective_plate)
-      # plt.show()
-      
-      if len(merged_boxes) != 8:
-          counter += 1
-          # print(len(merged_boxes))
-          # for box in merged_boxes:
-          #     x, y, w, h = box
-          #     cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
-          # cv2.imshow('123', perspective_plate)
-          # cv2.waitKey(1000)
-          continue
+    counter = 0
+    for i in tqdm(range(num_of_imgs)):
+        plate, perspective_plate, for_bounding_boxes, merged_boxes = get_new_plate()
 
-      # perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
-      # perspective_plate = Image.fromarray(perspective_plate)
-      
-      # _id = uuid.uuid4().__str__()
-      name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
+        # plt.figure()
+        # plt.imshow(perspective_plate)
+        # plt.show()
 
-      # Remove comments ****
+        if len(merged_boxes) != 8:
+            counter += 1
+            # print(len(merged_boxes))
+            # for box in merged_boxes:
+            #     x, y, w, h = box
+            #     cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
+            # cv2.imshow('123', perspective_plate)
+            # cv2.waitKey(1000)
+            continue
 
-      cv2.imwrite(os.path.join(images_path, '{}.png'.format(name)), perspective_plate)
+        # perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
+        # perspective_plate = Image.fromarray(perspective_plate)
 
-      label_file = open(os.path.join(labels_path, "{}.txt".format(name)), 'w')
-      
-      height, width = perspective_plate.shape[0], perspective_plate.shape[1]
-      
-      p1, p2, p3 = name.split("_")
-      classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6], plate[7]]
-      for i, box in enumerate(sorted(merged_boxes, key=lambda x: x[0])):
-          x, y, w, h = box
-          x_center = int((x + (0.5) * w)) / width
-          y_center = int((y + (0.5) * h)) / height
-          label_file.write("{} {} {} {} {}\n".format(classes[i], x_center, y_center, w / width, h / height))
-      
-      label_file.close()
-  print("fails: ", counter)
+        # _id = uuid.uuid4().__str__()
+        name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
+
+        # Remove comments ****
+
+        cv2.imwrite(os.path.join(images_path, '{}.png'.format(name)), perspective_plate)
+
+        label_file = open(os.path.join(labels_path, "{}.txt".format(name)), 'w')
+
+        height, width = perspective_plate.shape[0], perspective_plate.shape[1]
+
+        p1, p2, p3 = name.split("_")
+        classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6], plate[7]]
+        for i, box in enumerate(sorted(merged_boxes, key=lambda x: x[0])):
+            x, y, w, h = box
+            x_center = int((x + (0.5) * w)) / width
+            y_center = int((y + (0.5) * h)) / height
+            label_file.write("{} {} {} {} {}\n".format(classes[i], x_center, y_center, w / width, h / height))
+
+        label_file.close()
+    print("fails: ", counter)
 
 
 if __name__ == '__main__':
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--images_path", default="/content/images")
     parser.add_argument("--labels_path", default="/content/labels")
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument("--num_of_imgs", type=int)
     opt = parser.parse_args()
-    
+
     max_threads = opt.workers
     size = opt.num_of_imgs
 
@@ -492,7 +499,7 @@ if __name__ == '__main__':
     del args_dict["workers"]
 
     for i in range(max_threads):
-      chunk_size = (size // max_threads) if i < max_threads - 1 else  (size // max_threads) + (size % max_threads) 
-      args_dict.update({"num_of_imgs": chunk_size})
-      t = Thread(target=main, kwargs=args_dict)
-      t.start()
+        chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
+        args_dict.update({"num_of_imgs": chunk_size})
+        t = Thread(target=main, kwargs=args_dict)
+        t.start()
