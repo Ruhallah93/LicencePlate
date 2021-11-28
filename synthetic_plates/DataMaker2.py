@@ -468,7 +468,7 @@ def get_bounding_boxes(img):
                     h = lower - upper
                     y = upper
                     banned.append(j)
-            merged_boxes.append((x, y, w, h))
+            merged_boxes.append((x - 3, y - 3, w + 6, h + 6))
     return merged_boxes, boundingBoxes
 
 
@@ -618,6 +618,7 @@ def generate_and_save_palets(n: int = 1000):
     counter = 0
     for i in range(n):
         plate, perspective_plate, for_bounding_boxes, merged_boxes = get_yolo_data()
+
         if len(merged_boxes) != 8:
             counter += 1
             print(len(merged_boxes))
@@ -681,7 +682,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
-    parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
+    parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
     if opt.model == 'yolo':
