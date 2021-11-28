@@ -95,7 +95,7 @@ def get_iou(box1, box2):
 
 
 
-def update_confusion(confusion_matrix, predicted_box, gt_boxes, predicted_cls, gt_cls):
+def update_confusion(confusion_matrix, predicted_box, gt_boxes, predicted_cls, gt_cls, missed_boxes):
   """
 
 
@@ -105,7 +105,11 @@ def update_confusion(confusion_matrix, predicted_box, gt_boxes, predicted_cls, g
     ious.append(get_iou(gt_box, predicted_box))
   
   
+  
   max_iou = np.argmax(ious)
+
+  missed_boxes[max_iou] = -1
+
   confusion_matrix[gt_cls[max_iou], predicted_cls] += 1
 
   return confusion_matrix
@@ -198,7 +202,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
         
-        confusion_matrix = np.zeros((len(names), len(names)))
+        confusion_matrix = np.zeros((len(names) + 1, len(names) + 1)) # +1 for unknown
 
         plate_chars = path.split("/")[-1].split(".")[0].split("_") # list
         plate_chars = list(plate_chars[0]) + [plate_chars[1]] + list(plate_chars[2]) # ground-truth list
@@ -210,8 +214,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         for i, det in enumerate(pred):  # per image
             seen += 1
 
-
-            
 
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -234,12 +236,17 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             
                 gt_boxes, gt_cls = get_ground_truth("/content/test/label/" + path.split("/")[-1].split(".")[0] + ".txt")
                 
+                missed_boxes = list(range(8))
+
                 for prediction in det_sorted:
                   x1, y1, x2, y2, cls = prediction[0].item(), prediction[1].item(), prediction[2].item(), prediction[3].item(), prediction[-1].item()
                   
                   predicted_box = (x1, y1, x2, y2)
-                  confusion_matrix = update_confusion(confusion_matrix, predicted_box, gt_boxes, int(cls), gt_cls)
+                  confusion_matrix = update_confusion(confusion_matrix, predicted_box, gt_boxes, int(cls), gt_cls, missed_boxes)
 
+                for missed_box in missed_boxes:
+                  if missed_box != -1:
+                    confusion_matrix[gt_cls[missed_box], len(names)] += 1
 
                 # Print results
                 for c in det[:, -1].unique():
@@ -290,7 +297,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     vid_writer[i].write(im0)
 
     # Print results
-    df = pd.DataFrame(confusion_matrix, columns=list(names), index=list(names))
+    df = pd.DataFrame(confusion_matrix, columns=list(names) + ["unknown"], index=list(names) + ["unknown"])
     df.to_csv("/content/confusion_matrix.csv")
     
     # print(confusion_matrix)
