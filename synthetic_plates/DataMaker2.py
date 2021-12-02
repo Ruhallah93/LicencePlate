@@ -56,7 +56,7 @@ class ImageNoise(Noise):
     def apply(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
         im_pil = Image.fromarray(img)
-        noise = Image.open(self.pathToImage).convert("RGBA")
+        noise = Image.open(self.pathToImage).convert("RGBA").resize((312, 70))
         im_pil.paste(noise, (0, 0), mask=noise)
 
         open_cv_image = np.array(im_pil)[:, :, :-1]
@@ -542,21 +542,23 @@ def get_new_plate():
     # Generate randoms
     # License plate shape: (312, 70)
     img_shape = (312, 70)
-    blur_kernel_size = random.choice(np.arange(3, 12, 2))
-    blur_sigma = random.randint(3, 15)
-    light_param = random.randint(-211, 211)
+    blur_kernel_size = random.choice(np.arange(3, 8, 2))
+    blur_sigma = random.randint(3, 8)
+    light_param = random.randint(-170, 170)
     random_rect_start = [random.randint(0, img_shape[0] - 5), random.randint(0, img_shape[1] - 5)]
     random_rect_end = [random.randint(random_rect_start[0], img_shape[0]),
                        random.randint(random_rect_start[1], img_shape[1])]
     area = random.choice([-1, [random_rect_start, random_rect_end]])
     r_circle = random.randint(15, 31)
-    n_circle = random.randint(2, 5)
+    n_circle = random.randint(1, 3)
     kernel_sigma = random.random()
-    r_random = random.randint(0, 4)
+    # r_random = random.randint(0, 4)
+    r_random = 1
 
-    min_salt = 0.3
-    max_salt = 0.9
-    amount_sp = (random.random() + min_salt) * (max_salt / (min_salt + 1))
+    min_salt = 0.15
+    max_salt = 0.3
+    # max_salt / (min_salt + 1) = 0.3/1.15 = 30/115
+    amount_sp = (random.random() * (max_salt - min_salt)) + min_salt
     bw_random = bool(random.getrandbits(1))
     pepper_color = random.randint(0, 128)
     salt_color = random.randint(128, 256)
@@ -584,7 +586,7 @@ def get_new_plate():
     if r == 1:
         noises = [random.choice(noises2 + noises1)]
     elif r == 2:
-        r_blur_list = [0] * 60 + [1] * 25 + [2] * 15
+        r_blur_list = [0] * 64 + [1] * 35 + [2] * 1
         r_blur = random.choice(r_blur_list)
         if r_blur == 0:
             noises = [random.choice(noises1), random.choice(noises2)]
@@ -681,7 +683,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
-    parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
+    parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     opt = parser.parse_args()
     if opt.model == 'yolo':
