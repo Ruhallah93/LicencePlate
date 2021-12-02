@@ -468,7 +468,7 @@ def get_bounding_boxes(img):
                     h = lower - upper
                     y = upper
                     banned.append(j)
-            merged_boxes.append((x, y, w, h))
+            merged_boxes.append((x - 3, y - 3, w + 6, h + 6))
     return merged_boxes, boundingBoxes
 
 
@@ -620,6 +620,7 @@ def generate_and_save_palets(n: int = 1000):
     counter = 0
     for i in range(n):
         plate, perspective_plate, for_bounding_boxes, merged_boxes = get_yolo_data()
+
         if len(merged_boxes) != 8:
             counter += 1
             print(len(merged_boxes))
