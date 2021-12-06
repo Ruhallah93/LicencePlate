@@ -314,6 +314,51 @@ class CircularLightNoise(Noise):
         return img_noise
 
 
+#############################################
+# Set background for license plate
+
+def set_background(img, mask, width, height, random_scale=0.5, scale_ratio=True, background=-1, position=-1):
+    """
+    img: plate image
+    width, height: width & height of background
+    random_scale: =0, dont scale img. !=0, resize img with random scale between img.dim -+ img.dim * random_scale
+    scale_ratio: True= remain license ratio
+    background: background image, if pass this argument -1, set a random static color for background
+    position: position of license plate in the background, if pass -1 generate a random position
+    """
+    if random_scale != 0:
+        # cv2.imshow('d', img)
+        if scale_ratio:
+            my_random_scale = (random.random() * (1 + random_scale - (1 - random_scale))) + 1 - random_scale
+            new_width = int(img.shape[1] * my_random_scale)
+            new_height = int(img.shape[0] * my_random_scale)
+        else:
+            new_width = random.randint(int(img.shape[1] - img.shape[1] * random_scale),
+                                       int(img.shape[1] + img.shape[1] * random_scale))
+            new_height = random.randint(int(img.shape[0] - img.shape[0] * random_scale),
+                                        int(img.shape[0] + img.shape[0] * random_scale))
+        img = cv2.resize(img, (new_width, new_height))
+
+        mask = cv2.resize(mask, (new_width, new_height))
+        # cv2.imshow('s', img)
+        # cv2.waitKey()
+        new_mask = []
+        if background == -1:
+            r, g, b = random.randint(0, 256), random.randint(0, 256), random.randint(0, 256)
+            background = np.array(Image.new('RGB', (width, height), (r, g, b)))
+            new_mask = np.array(Image.new('RGB', (width, height), (255, 255, 255)))
+        if position == -1:
+            x_position = random.randint(0, width - img.shape[1])
+            y_position = random.randint(0, height - img.shape[0])
+            position = (x_position, y_position)
+            background[y_position:y_position + img.shape[0], x_position:x_position + img.shape[1]] = img
+            new_mask[y_position:y_position + mask.shape[0], x_position: x_position + mask.shape[1]] = mask
+        # cv2.imshow('s', background)
+        # cv2.waitKey()
+
+    return background, new_mask
+
+
 def get_perspective_matrix(width, height, prespectiveType: int = 1,
                            pad: tuple = (100, 100, 100, 100), const_h=30, const_w=15):
     """
@@ -364,7 +409,7 @@ def get_perspective_matrix(width, height, prespectiveType: int = 1,
     return cv2.getPerspectiveTransform(inp, out)
 
 
-def create_perspective(img, noises: list, prespectiveType: int = 0, pad: tuple = (100, 100, 100, 100)):
+def create_perspective(img, img_size: tuple, noises: list, prespectiveType: int = 0, pad: tuple = (100, 100, 100, 100)):
     """
     This function applies prespective to the image with the given path
 
@@ -389,16 +434,19 @@ def create_perspective(img, noises: list, prespectiveType: int = 0, pad: tuple =
     img = np.array(img)[:, :, :-1][:, :, ::-1]
     before_altering = img.copy()
 
+    # Apply noises
     for noise in noises:
         before_altering = noise.apply(before_altering)
 
     bg = img[10, 35, :]
+    # bg = (255, 0, 0)
     img[:, :32, :] = bg
     img[:, 235:242, :] = bg
     img[:6, :, :] = bg
     img[:, -6:, :] = bg
     img[-5:, :, :] = bg
     img[:20, 242:300, :] = bg
+
     height, width = img.shape[:2]
     img = cv2.copyMakeBorder(img, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT)
     before_altering = cv2.copyMakeBorder(before_altering, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT)
@@ -407,12 +455,20 @@ def create_perspective(img, noises: list, prespectiveType: int = 0, pad: tuple =
         pType = np.random.randint(1, 7)
     matrix = get_perspective_matrix(width, height, pType)
     newHeight, newWidth = img.shape[:2]
+
     imgOutput = cv2.warpPerspective(img, matrix, (newWidth, newHeight),
                                     cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
                                     borderValue=(0, 0, 0))
     before_altering = cv2.warpPerspective(before_altering, matrix, (newWidth, newHeight),
                                           cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
                                           borderValue=(0, 0, 0))
+
+    tt, ttt = set_background(before_altering, imgOutput, img_size[0], img_size[1])
+
+    cv2.imshow('s', tt)
+    cv2.imshow('d', ttt)
+    cv2.waitKey()
+
     return (before_altering, imgOutput)
 
 
@@ -490,7 +546,7 @@ def get_glyph_address(glyph_name):
     return os.path.join("./Glyphs/b_roya", "{}.png".format(glyph_name))
 
 
-def get_new_plate():
+def get_new_plate(img_size):
     plate = get_new_plate_number()
 
     # Get Glyph images of plate characters
@@ -595,13 +651,14 @@ def get_new_plate():
         else:
             noises = [random.choice(noises1), random.choice(noises2), random.choice(noises3)]
 
-    perspective_plate, for_bounding_boxes = create_perspective(_newPlate, noises=noises, pad=(50, 50, 10, 10))
+    perspective_plate, for_bounding_boxes = create_perspective(_newPlate, img_size=img_size, noises=noises,
+                                                               pad=(50, 50, 10, 10))
 
     return plate, perspective_plate, for_bounding_boxes
 
 
-def get_yolo_data():
-    plate, perspective_plate, for_bounding_boxes = get_new_plate()
+def get_yolo_data(img_size):
+    plate, perspective_plate, for_bounding_boxes = get_new_plate(img_size)
     ## get bounding boxes and plot them
     mergedBoxes, bb = get_bounding_boxes(for_bounding_boxes)
 
@@ -614,12 +671,12 @@ def get_unet_data():
     return plate, perspective_plate, masked
 
 
-def generate_and_save_palets(n: int = 1000):
+def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
     random.seed(datetime.now())
 
     counter = 0
     for i in range(n):
-        plate, perspective_plate, for_bounding_boxes, merged_boxes = get_yolo_data()
+        plate, perspective_plate, for_bounding_boxes, merged_boxes = get_yolo_data(img_size)
 
         if len(merged_boxes) != 8:
             counter += 1
@@ -633,6 +690,7 @@ def generate_and_save_palets(n: int = 1000):
 
         perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
         perspective_plate = Image.fromarray(perspective_plate)
+
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
 
@@ -686,6 +744,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
+    parser.add_argument('--img_size', type=tuple, default=(600, 400), help='size of background')
     opt = parser.parse_args()
     if opt.model == 'yolo':
         size = opt.size
@@ -693,7 +752,8 @@ if __name__ == '__main__':
 
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-            t = Thread(target=generate_and_save_palets, args=[chunk_size])
+            # t = Thread(target=generate_and_save_palets, args=[chunk_size])
+            t = Thread(target=generate_and_save_palets(img_size=opt.img_size), args=[chunk_size])
             t.start()
     elif opt.model == 'unet':
         size = opt.size
