@@ -355,7 +355,6 @@ def set_background(img, mask, width, height, random_scale=0.5, scale_ratio=True,
             new_mask[y_position:y_position + mask.shape[0], x_position: x_position + mask.shape[1]] = mask
         # cv2.imshow('s', background)
         # cv2.waitKey()
-
     return background, new_mask
 
 
@@ -409,7 +408,8 @@ def get_perspective_matrix(width, height, prespectiveType: int = 1,
     return cv2.getPerspectiveTransform(inp, out)
 
 
-def create_perspective(img, img_size: tuple, noises: list, prespectiveType: int = 0, pad: tuple = (100, 100, 100, 100)):
+def create_perspective(img, mask, img_size: tuple, noises: list, prespectiveType: int = 0,
+                       pad: tuple = (100, 100, 100, 100)):
     """
     This function applies prespective to the image with the given path
 
@@ -432,44 +432,60 @@ def create_perspective(img, img_size: tuple, noises: list, prespectiveType: int 
 
     # img = cv2.imread(pathToImage)
     img = np.array(img)[:, :, :-1][:, :, ::-1]
+    mask = np.array(mask)[:, :, :-1][:, :, ::-1]
+
     before_altering = img.copy()
 
     # Apply noises
     for noise in noises:
         before_altering = noise.apply(before_altering)
 
-    bg = img[10, 35, :]
-    # bg = (255, 0, 0)
-    img[:, :32, :] = bg
-    img[:, 235:242, :] = bg
-    img[:6, :, :] = bg
-    img[:, -6:, :] = bg
-    img[-5:, :, :] = bg
-    img[:20, 242:300, :] = bg
+    before_altering, mask = set_background(before_altering, mask, img_size[0], img_size[1])
 
-    height, width = img.shape[:2]
-    img = cv2.copyMakeBorder(img, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT)
+    height, width = mask.shape[:2]
+    mask = cv2.copyMakeBorder(mask, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT, value=(255, 255, 255))
     before_altering = cv2.copyMakeBorder(before_altering, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT)
+
+    merged_boxes, _ = get_bounding_boxes(mask)
+
     pType = prespectiveType
     if prespectiveType == 0:
         pType = np.random.randint(1, 7)
     matrix = get_perspective_matrix(width, height, pType)
-    newHeight, newWidth = img.shape[:2]
+    newHeight, newWidth = mask.shape[:2]
 
-    imgOutput = cv2.warpPerspective(img, matrix, (newWidth, newHeight),
+    imgOutput = mask.copy()
+
+    imgOutput = cv2.warpPerspective(imgOutput, matrix, (newWidth, newHeight),
                                     cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
-                                    borderValue=(0, 0, 0))
+                                    borderValue=(255, 255, 255))
     before_altering = cv2.warpPerspective(before_altering, matrix, (newWidth, newHeight),
                                           cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
                                           borderValue=(0, 0, 0))
 
-    tt, ttt = set_background(before_altering, imgOutput, img_size[0], img_size[1])
+    up_left_boxes = np.array([[x, y, 1] for (x, y, w, h) in merged_boxes]).T
+    down_right_boxes = np.array([[x + w, y + h, 1] for (x, y, w, h) in merged_boxes]).T
+    up_right_boxes = np.array([[x + w, y, 1] for (x, y, w, h) in merged_boxes]).T
+    down_left_boxes = np.array([[x, y + h, 1] for (x, y, w, h) in merged_boxes]).T
 
-    cv2.imshow('s', tt)
-    cv2.imshow('d', ttt)
-    cv2.waitKey()
+    up_left_boxes = matrix @ up_left_boxes
+    down_right_boxes = matrix @ down_right_boxes
+    up_right_boxes = matrix @ up_right_boxes
+    down_left_boxes = matrix @ down_left_boxes
+    boxes = []
+    for (ul, dr, ur, dl) in zip(up_left_boxes.T, down_right_boxes.T, up_right_boxes.T, down_left_boxes.T):
+        x = int(np.min([ul[0], dr[0], ur[0], dl[0]]))
+        y = int(np.min([ul[1], dr[1], ur[1], dl[1]]))
+        w = int(np.max([ul[0], dr[0], ur[0], dl[0]]) - np.min([ul[0], dr[0], ur[0], dl[0]]))
+        h = int(np.max([ul[1], dr[1], ur[1], dl[1]]) - np.min([ul[1], dr[1], ur[1], dl[1]]))
+        boxes.append((x, y, w, h))
 
-    return (before_altering, imgOutput)
+    # if len(boxes) != 8:
+    #     cv2.imshow('mask', before_altering)
+    #     cv2.imshow('img', mask)
+    #     cv2.waitKey()
+
+    return (before_altering, imgOutput, boxes)
 
 
 def compare(rect1, rect2):
@@ -481,35 +497,44 @@ def compare(rect1, rect2):
 
 def get_mask(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    thresh = cv2.adaptiveThreshold(blurred, 255,
-                                   cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 45, 15)
-    _, labels = cv2.connectedComponents(thresh)
-    mask = np.zeros(thresh.shape, dtype="uint8")
-    for (i, label) in enumerate(np.unique(labels)):
-        # If this is the background label, ignore it
-        if label == 0:
-            continue
-
-        # Otherwise, construct the label mask to display only connected component
-        # for the current label
-        labelMask = np.zeros(thresh.shape, dtype="uint8")
-        labelMask[labels == label] = 255
-        numPixels = cv2.countNonZero(labelMask)
-
-        # If the number of pixels in the component is between lower bound and upper bound,
-        # add it to our mask
-        if numPixels > 5 and numPixels < 800:
-            mask = cv2.add(mask, labelMask)
-    return mask
+    gray = 255 - gray
+    cv2.imshow('gray', gray)
+    cv2.waitKey()
+    # # reds = np.where(gray == 76)
+    # # non_reds = np.where(gray != 76)
+    # # gray[reds] = 255
+    # # gray[non_reds] = 0
+    #
+    # gray = cv2.GaussianBlur(gray, (1, 1), 0)
+    # thresh = cv2.adaptiveThreshold(gray, 255,
+    #                                cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 45)
+    # _, labels = cv2.connectedComponents(thresh)
+    # mask = np.zeros(thresh.shape, dtype="uint8")
+    # for (i, label) in enumerate(np.unique(labels)):
+    #     # If this is the background label, ignore it
+    #     if label == 0:
+    #         continue
+    #
+    #     # Otherwise, construct the label mask to display only connected component
+    #     # for the current label
+    #     labelMask = np.zeros(thresh.shape, dtype="uint8")
+    #     labelMask[labels == label] = 255
+    #     numPixels = cv2.countNonZero(labelMask)
+    #
+    #     # If the number of pixels in the component is between lower bound and upper bound,
+    #     # add it to our mask
+    #     mask = cv2.add(mask, labelMask)
+    #     # if numPixels > 5 and numPixels < 800:
+    #     #     mask = cv2.add(mask, labelMask)
+    return gray
 
 
 def get_bounding_boxes(img):
     mask = get_mask(img)
 
     cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    boundingBoxes = [cv2.boundingRect(c) for c in cnts]
-    boundingBoxes = sorted(boundingBoxes, key=functools.cmp_to_key(compare))
+    boundingBoxes1 = [cv2.boundingRect(c) for c in cnts]
+    boundingBoxes = sorted(boundingBoxes1, key=functools.cmp_to_key(compare))
 
     merged_boxes = list()
     banned = []
@@ -525,6 +550,15 @@ def get_bounding_boxes(img):
                     y = upper
                     banned.append(j)
             merged_boxes.append((x - 3, y - 3, w + 6, h + 6))
+
+    # if len(merged_boxes) != 8:
+    #     for box in boundingBoxes:
+    #         x, y, w, h = box
+    #         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    #     cv2.imshow('mask', mask)
+    #     cv2.imshow('img', img)
+    #     cv2.waitKey()
+
     return merged_boxes, boundingBoxes
 
 
@@ -555,20 +589,26 @@ def get_new_plate(img_size):
     # Create a blank image with size of templates
     # and add the background and glyph images
     new_plate = Image.new('RGBA', (600, 132), (0, 0, 0, 0))
+    mask = new_plate.copy()
 
     if plate[2] in ["TE", "EIN"]:
         background = Image.open("./templates/template-ommomi.png").convert("RGBA")
     else:
         background = Image.open("./templates/template-base.png").convert("RGBA")
+
+    white_background = Image.open("./templates/white.png").convert("RGBA")
     new_plate.paste(background, (0, 0))
+    mask.paste(white_background, (0, 0))
 
     # adding glyph images with 11 pixel margin
     w = 0
     for i, glyph in enumerate(glyph_images[:-2]):
         if i == 2:
             new_plate.paste(glyph, (70 + w, 30), mask=glyph)
+            mask.paste(glyph, (70 + w, 30), mask=glyph)
         else:
             new_plate.paste(glyph, (70 + w, 25), mask=glyph)
+            mask.paste(glyph, (70 + w, 25), mask=glyph)
         w += glyph.size[0] + 3
 
     # last two digits
@@ -577,9 +617,11 @@ def get_new_plate(img_size):
         width, height = glyph.size[0], glyph.size[1]
         resized_glyph = glyph.resize((int(width * 0.75), int(height * 0.75)))
         new_plate.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
+        mask.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
         w += glyph.size[0] - 10
 
     _newPlate = new_plate.resize((312, 70), Image.ANTIALIAS)
+    mask = mask.resize((312, 70), Image.ANTIALIAS)
 
     imageNoise1 = ImageNoise('./noise/noise1.png')
     imageNoise2 = ImageNoise('./noise/noise2.png')
@@ -651,24 +693,24 @@ def get_new_plate(img_size):
         else:
             noises = [random.choice(noises1), random.choice(noises2), random.choice(noises3)]
 
-    perspective_plate, for_bounding_boxes = create_perspective(_newPlate, img_size=img_size, noises=noises,
-                                                               pad=(50, 50, 10, 10))
+    perspective_plate, mask, boundingBoxes = create_perspective(_newPlate, mask, img_size=img_size, noises=noises,
+                                                                pad=(50, 50, 10, 10))
 
-    return plate, perspective_plate, for_bounding_boxes
+    return plate, perspective_plate, mask, boundingBoxes
 
 
 def get_yolo_data(img_size):
-    plate, perspective_plate, for_bounding_boxes = get_new_plate(img_size)
+    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size)
     ## get bounding boxes and plot them
-    mergedBoxes, bb = get_bounding_boxes(for_bounding_boxes)
+    # mergedBoxes, bb = get_bounding_boxes(for_bounding_boxes)
 
-    return plate, perspective_plate, for_bounding_boxes, mergedBoxes
+    return plate, perspective_plate, mask, boundingBoxes
 
 
-def get_unet_data():
-    plate, perspective_plate, for_bounding_boxes = get_new_plate()
-    masked = get_mask(for_bounding_boxes)
-    return plate, perspective_plate, masked
+def get_unet_data(img_size):
+    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size)
+    # masked = get_mask(for_bounding_boxes)
+    return plate, perspective_plate, mask, boundingBoxes
 
 
 def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
@@ -685,7 +727,7 @@ def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
                 x, y, w, h = box
                 cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
             cv2.imshow('123', perspective_plate)
-            cv2.waitKey(1000)
+            cv2.waitKey()
             continue
 
         perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
@@ -714,11 +756,11 @@ def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
     print("fails: ", counter)
 
 
-def generate_and_save_palets_unet(n: int = 1000, dataType='train'):
+def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), dataType='train'):
     random.seed(datetime.now())
 
     for i in range(n):
-        plate, perspective_plate, mask = get_unet_data()
+        plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size)
 
         perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
         perspective_plate = Image.fromarray(perspective_plate)
@@ -741,7 +783,7 @@ def generate_and_save_palets_unet(n: int = 1000, dataType='train'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--model', type=str, default='yolo', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     parser.add_argument('--img_size', type=tuple, default=(600, 400), help='size of background')
@@ -760,5 +802,5 @@ if __name__ == '__main__':
         max_threads = opt.workers
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-            t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.type))
+            t = Thread(target=generate_and_save_palets_unet(img_size=opt.img_size), args=(chunk_size, opt.type))
             t.start()
