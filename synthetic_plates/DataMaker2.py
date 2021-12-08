@@ -232,7 +232,10 @@ class GradientLightNoise(Noise):
                 np.arange(self.max_light_param, self.max_light_param - self.area[1][1] + self.area[0][1],
                           -1)]).transpose()
         ################################
-        y_noise[self.area[0][1]: self.area[1][1], self.area[0][0]:self.area[1][0]] = y_noise[self.area[0][1]: self.area[1][1], self.area[0][0]:self.area[1][0]] + noise
+        y_noise[self.area[0][1]: self.area[1][1], self.area[0][0]:self.area[1][0]] = y_noise[
+                                                                                     self.area[0][1]: self.area[1][1],
+                                                                                     self.area[0][0]:self.area[1][
+                                                                                         0]] + noise
 
         # Overflow handling
         if self.max_light_param > 0:
@@ -751,6 +754,7 @@ def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), d
 
     counter = 0
     for i in range(n):
+        print(i)
         plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size)
         if len(bonding_boxes) != 8:
             counter += 1
@@ -785,24 +789,30 @@ def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
-    parser.add_argument('--img_size', type=tuple, default=(600, 400), help='size of background')
+    parser.add_argument('--img_size', type=tuple, default=(500, 400), help='size of background')
     opt = parser.parse_args()
+    threadList = []
     if opt.model == 'yolo':
         size = opt.size
         max_threads = opt.workers
 
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-            # t = Thread(target=generate_and_save_palets, args=[chunk_size])
-            t = Thread(target=generate_and_save_palets(img_size=opt.img_size), args=[chunk_size])
+            t = Thread(target=generate_and_save_palets, args=(chunk_size, opt.img_size))
             t.start()
+            threadList.append(t)
+        for t in threadList:
+            t.join()
     elif opt.model == 'unet':
         size = opt.size
         max_threads = opt.workers
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-            t = Thread(target=generate_and_save_palets_unet(img_size=opt.img_size), args=(chunk_size, opt.type))
+            t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.img_size, opt.type))
             t.start()
+            threadList.append(t)
+        for t in threadList:
+            t.join()
