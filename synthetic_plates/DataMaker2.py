@@ -754,7 +754,6 @@ def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), d
 
     counter = 0
     for i in range(n):
-        print(i)
         plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size)
         if len(bonding_boxes) != 8:
             counter += 1
