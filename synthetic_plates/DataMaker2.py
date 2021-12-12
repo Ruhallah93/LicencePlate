@@ -4,12 +4,14 @@ from threading import Thread
 import argparse
 
 import functools
+
 import numpy as np
 import cv2
 import random
 from PIL import Image
 import os
 from datetime import datetime
+import PIL.ImageOps
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -505,10 +507,13 @@ def compare(rect1, rect2):
 
 
 def get_mask(img):
+    # img[np.where(img != 255)] = 0
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    thresh = cv2.adaptiveThreshold(gray, 255,
-                                   cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 45)
+    gray = cv2.GaussianBlur(gray, (1, 1), 0)
+
+    cv2.imwrite('123.jpg', gray)
+
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 45)
     _, labels = cv2.connectedComponents(thresh)
     mask = np.zeros(thresh.shape, dtype="uint8")
     for (i, label) in enumerate(np.unique(labels)):
@@ -527,6 +532,7 @@ def get_mask(img):
         mask = cv2.add(mask, labelMask)
         # if numPixels > 5 and numPixels < 800:
         #     mask = cv2.add(mask, labelMask)
+
     return mask
 
 
@@ -569,49 +575,98 @@ def get_new_plate_number():
 
 
 # Returns Address of a glyph image given font, and glyph name
-def get_glyph_address(glyph_name):
-    return os.path.join("./Glyphs/b_roya", "{}.png".format(glyph_name))
+def get_glyph_address(glyph_name, c='grayscale'):
+    if c == 'colorful':
+        return os.path.join("./Glyphs/b_roya_color", "{}.png".format(glyph_name))
+    else:
+        return os.path.join("./Glyphs/b_roya", "{}.png".format(glyph_name))
 
 
-def get_new_plate(img_size):
+def get_new_plate(img_size, mask_state='grayscale'):
+    """
+        mask_state: grayscale or colorful
+    """
     plate = get_new_plate_number()
-
-    # Get Glyph images of plate characters
-    glyph_images = [Image.open(get_glyph_address(glyph)).convert("RGBA") for glyph in plate]
 
     # Create a blank image with size of templates
     # and add the background and glyph images
     new_plate = Image.new('RGBA', (600, 132), (0, 0, 0, 0))
     mask = new_plate.copy()
 
+    if plate[2] in ["D", "S"]:
+        background = Image.open("./templates/template-diplomat.png").convert("RGBA")
     if plate[2] in ["TE", "EIN"]:
         background = Image.open("./templates/template-ommomi.png").convert("RGBA")
+    elif plate[2] in ["FE", "ZE"]:
+        background = Image.open("./templates/template-defa.png").convert("RGBA")
+    elif plate[2] in ["SHIN"]:
+        background = Image.open("./templates/template-artesh.png").convert("RGBA")
+    elif plate[2] in ["PE"]:
+        background = Image.open("./templates/template-police.png").convert("RGBA")
+    elif plate[2] in ["SE"]:
+        background = Image.open("./templates/template-sepah.png").convert("RGBA")
+    elif plate[2] in ["ALEF"]:
+        background = Image.open("./templates/template-dolati.png").convert("RGBA")
+    elif plate[2] in ["TASHRIFAT"]:
+        background = Image.open("./templates/template-tashrifat.png").convert("RGBA")
+    elif plate[2] in ["KAF"]:
+        background = Image.open("./templates/template-.png").convert("RGBA")
+    elif plate[2] in ["GAF"]:
+        background = Image.open("./templates/template-gozar.png").convert("RGBA")
     else:
         background = Image.open("./templates/template-base.png").convert("RGBA")
+
+    background = Image.open("./templates/template-sepah.png").convert("RGBA")
 
     white_background = Image.open("./templates/white.png").convert("RGBA")
     new_plate.paste(background, (0, 0))
     mask.paste(white_background, (0, 0))
 
-    # adding glyph images with 11 pixel margin
-    w = 0
-    for i, glyph in enumerate(glyph_images[:-2]):
-        if i == 2:
-            new_plate.paste(glyph, (70 + w, 30), mask=glyph)
-            mask.paste(glyph, (70 + w, 30), mask=glyph)
-        else:
-            new_plate.paste(glyph, (70 + w, 25), mask=glyph)
-            mask.paste(glyph, (70 + w, 25), mask=glyph)
-        w += glyph.size[0] + 3
+    # Get Glyph images of plate characters
+    # if plate[2] in ["FE", "ZE", "PE", "SE", "ALEF", "TASHRIFAT"]:
+    #     glyph_images = [PIL.ImageOps.invert(Image.open(get_glyph_address(glyph, mask_state)).convert("RGBA")) for glyph in plate]
+    # else:
+    #     glyph_images = [Image.open(get_glyph_address(glyph, mask_state)).convert("RGBA") for glyph in plate]
 
-    # last two digits
-    w = 0
-    for i, glyph in enumerate(glyph_images[-2:]):
-        width, height = glyph.size[0], glyph.size[1]
-        resized_glyph = glyph.resize((int(width * 0.75), int(height * 0.75)))
-        new_plate.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
-        mask.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
-        w += glyph.size[0] - 10
+    def invert(img):
+        r, g, b, a = img.split()
+        rgb_image = Image.merge('RGB', (r, g, b))
+        inverted_image = PIL.ImageOps.invert(rgb_image)
+        r2, g2, b2 = inverted_image.split()
+        final_transparent_image = Image.merge('RGBA', (r2, g2, b2, a))
+        return final_transparent_image
+
+    def border(img):
+        r, g, b, a = img.split()
+        A = np.array(a)
+        A[:, [0, -1]] = 0
+        rgb_image = Image.merge('RGB', (r, g, b))
+        return Image.merge('RGBA', (r, g, b, PIL.Image.fromarray(A)))
+
+    glyph_images = [invert(Image.open(get_glyph_address(glyph, c='grayscale')).convert("RGBA")) for glyph in plate]
+    glyph_images_mask = [border(Image.open(get_glyph_address(glyph, mask_state)).convert("RGBA")) for glyph in plate]
+
+    # adding glyph images with 11 pixel margin
+    def glyph_adjust(glyph_images, plate):
+        w = 0
+        for i, glyph in enumerate(glyph_images[:-2]):
+            if i == 2:
+                plate.paste(glyph, (70 + w, 30), mask=glyph)
+            else:
+                plate.paste(glyph, (70 + w, 25), mask=glyph)
+            w += glyph.size[0] + 3
+
+        # last two digits
+        w = 0
+        for i, glyph in enumerate(glyph_images[-2:]):
+            width, height = glyph.size[0], glyph.size[1]
+            resized_glyph = glyph.resize((int(width * 0.75), int(height * 0.75)))
+            plate.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
+            w += glyph.size[0] - 10
+        return plate
+
+    new_plate = glyph_adjust(glyph_images, new_plate)
+    mask = glyph_adjust(glyph_images_mask, mask)
 
     _newPlate = new_plate.resize((312, 70), Image.ANTIALIAS)
     mask = mask.resize((312, 70), Image.ANTIALIAS)
@@ -693,15 +748,15 @@ def get_new_plate(img_size):
 
 
 def get_yolo_data(img_size):
-    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size)
+    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size, mask_state='grayscale')
     ## get bounding boxes and plot them
     # mergedBoxes, bb = get_bounding_boxes(for_bounding_boxes)
 
     return plate, perspective_plate, mask, boundingBoxes
 
 
-def get_unet_data(img_size):
-    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size)
+def get_unet_data(img_size, mask_state):
+    plate, perspective_plate, mask, boundingBoxes = get_new_plate(img_size, mask_state=mask_state)
     # masked = get_mask(for_bounding_boxes)
     return plate, perspective_plate, mask, boundingBoxes
 
@@ -714,7 +769,7 @@ def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
         plate, perspective_plate, mask, merged_boxes = get_yolo_data(img_size)
         if len(merged_boxes) != 8:
             counter += 1
-            print(len(merged_boxes))
+            print("len(merged_boxes): ", len(merged_boxes))
             for box in merged_boxes:
                 x, y, w, h = box
                 cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
@@ -749,15 +804,16 @@ def generate_and_save_palets(n: int = 1000, img_size: tuple = (600, 400)):
     print("fails: ", counter)
 
 
-def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), dataType='train'):
+def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), dataType='train',
+                                  mask_state='grayscale'):
     random.seed(datetime.now())
 
     counter = 0
     for i in range(n):
-        plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size)
+        plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size, mask_state)
         if len(bonding_boxes) != 8:
             counter += 1
-            print(len(bonding_boxes))
+            print("len(bonding_boxes): ", len(bonding_boxes))
             for box in bonding_boxes:
                 x, y, w, h = box
                 cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
@@ -787,11 +843,12 @@ def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), d
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
+    parser.add_argument('--size', type=int, default=100, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--model', type=str, default='unet', help='generate data for which model: yolo or unet')
     parser.add_argument('--type', type=str, default='train', help='whether generate train data or test data')
     parser.add_argument('--img_size', type=tuple, default=(500, 400), help='size of background')
+    parser.add_argument('--mask_state', type=str, default='colorful', help='grayscale or colorful')
     opt = parser.parse_args()
     threadList = []
     if opt.model == 'yolo':
@@ -810,7 +867,7 @@ if __name__ == '__main__':
         max_threads = opt.workers
         for i in range(max_threads):
             chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-            t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.img_size, opt.type))
+            t = Thread(target=generate_and_save_palets_unet, args=(chunk_size, opt.img_size, opt.type, opt.mask_state))
             t.start()
             threadList.append(t)
         for t in threadList:
