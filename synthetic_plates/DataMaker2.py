@@ -811,16 +811,6 @@ def generate_and_save_palets_unet(n: int = 1000, img_size: tuple = (600, 400), d
     counter = 0
     for i in range(n):
         plate, perspective_plate, mask, bonding_boxes = get_unet_data(img_size, mask_state)
-        # if len(bonding_boxes) != 8:
-        #     counter += 1
-        #     print("len(bonding_boxes): ", len(bonding_boxes))
-        #     for box in bonding_boxes:
-        #         x, y, w, h = box
-        #         cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
-        #     cv2.imshow('perspective_plate', perspective_plate)
-        #     cv2.imshow('mask', mask)
-        #     cv2.waitKey()
-        #     continue
 
         perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGR2RGBA)
         perspective_plate = Image.fromarray(perspective_plate)
