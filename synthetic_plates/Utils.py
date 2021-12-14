@@ -13,6 +13,8 @@ import numpy as np
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
+
+# ignored: "FE", "ZE", "SHIN", "PE", "SE", "ALEF","TASHRIFAT","KAF","GAF"
 letters = ["BE", "TE", "JIM", "DAL", "RE", "SIN", "SAD", "TA", "EIN", "GHAF", "LAM", "MIM", "NON", "VAV", "HE",
            "YE", "WHEEL"]
 letter_to_class = {"ALEF": 10, "BE": 11, "PE": 12, "TE": 13, "SE": 14, "JIM": 15, "CHE": 16, "HEY": 17, "KHE": 18,
@@ -20,6 +22,7 @@ letter_to_class = {"ALEF": 10, "BE": 11, "PE": 12, "TE": 13, "SE": 14, "JIM": 15
                    "SIN": 24, "SHIN": 25, "SAD": 26, "ZAD": 27, "TA": 28, "ZA": 29, "EIN": 30, "GHEIN": 31, "FE": 32,
                    "GHAF": 33, "KAF": 34, "GAF": 35, "LAM": 36, "MIM": 37, "NON": 38,
                    "VAV": 39, "HE": 40, "YE": 41, "WHEEL": 42}
+
 
 def get_new_plate_number():
     return [random.choice(numbers),
@@ -39,11 +42,10 @@ def get_glyph_address(glyph_name, c='grayscale'):
     else:
         return os.path.join("files/Glyphs/b_roya", "{}.png".format(glyph_name))
 
-
 def get_template(plate):
     if plate[2] in ["D", "S"]:
         background = Image.open("files/templates/template-diplomat.png").convert("RGBA")
-    if plate[2] in ["TE", "EIN"]:
+    elif plate[2] in ["TE", "EIN"]:
         background = Image.open("files/templates/template-ommomi.png").convert("RGBA")
     elif plate[2] in ["FE", "ZE"]:
         background = Image.open("files/templates/template-defa.png").convert("RGBA")
