@@ -5,16 +5,16 @@ HBD BIDEH
 
 
 Generated Examples and Masks:<br/>
-<img src="generated_examples/01.png">
-<img src="generated_examples/01m.png"><br/>
-<img src="generated_examples/02.png">
-<img src="generated_examples/02m.png"><br/>
-<img src="generated_examples/03.png">
-<img src="generated_examples/03m.png"><br/>
-<img src="generated_examples/04.png">
-<img src="generated_examples/04m.png"><br/>
-<img src="generated_examples/05.png">
-<img src="generated_examples/05m.png"><br/>
+<img src="generated_examples/01.png" width="200">
+<img src="generated_examples/01m.png" width="200"><br/>
+<img src="generated_examples/02.png" width="200">
+<img src="generated_examples/02m.png" width="200"><br/>
+<img src="generated_examples/03.png" width="200">
+<img src="generated_examples/03m.png" width="200"><br/>
+<img src="generated_examples/04.png" width="200">
+<img src="generated_examples/04m.png" width="200"><br/>
+<img src="generated_examples/05.png" width="200">
+<img src="generated_examples/05m.png" width="200"><br/>
 
 <h1>How to use DataMaker for YOLO</h1>
 <h3>Example</h3>
