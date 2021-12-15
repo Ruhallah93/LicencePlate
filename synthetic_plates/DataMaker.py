@@ -103,7 +103,6 @@ if __name__ == '__main__':
     max_threads = opt.workers
     for i in range(max_threads):
         chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-        print(chunk_size)
         t = Thread(target=generate_and_save_plates, args=(opt.address, chunk_size, tuple(opt.img_size),
                                                           opt.save_bounding_boxes, opt.save_mask, opt.mask_state))
         t.start()
