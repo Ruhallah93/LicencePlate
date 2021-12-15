@@ -6,9 +6,9 @@ import cv2
 import random
 from PIL import Image
 import os
+from utils.Utils import letter_to_class
 from datetime import datetime
-from Creator import get_new_plate
-import Utils as utils
+from utils.Creator import get_new_plate
 
 
 def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple = (600, 400),
@@ -45,7 +45,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
         if save_bounding_boxes:
             label_file = open("{}.txt".format(directory + name + '$' + _id + "txt"), 'w')
             height, width = perspective_plate.height, perspective_plate.width
-            classes = [plate[0], plate[1], utils.letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6],
+            classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6],
                        plate[7]]
             for i, box in enumerate(sorted(bonding_boxes, key=lambda x: x[0])):
                 x, y, w, h = box
@@ -84,10 +84,14 @@ if __name__ == '__main__':
     # opt.save_bounding_boxes = True
     # opt.mask_state = "grayscale"
 
+    if not os.path.exists(opt.address):
+        os.makedirs(opt.address)
+
     size = opt.size
     max_threads = opt.workers
     for i in range(max_threads):
         chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
+        print(chunk_size)
         t = Thread(target=generate_and_save_plates, args=(opt.address, chunk_size, tuple(opt.img_size),
                                                           opt.save_bounding_boxes, opt.save_mask, opt.mask_state))
         t.start()

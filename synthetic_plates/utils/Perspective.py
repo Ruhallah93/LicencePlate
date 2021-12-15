@@ -1,19 +1,8 @@
 import numpy as np
 import cv2
 import functools
-import random
-from PIL import Image
 
-import os
-import sys
-import inspect
-
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
-from Utils import set_background
-
+from .Utils import set_background
 
 def compare(rect1, rect2):
     if abs(rect1[1] - rect2[1]) > 10:

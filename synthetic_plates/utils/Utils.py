@@ -2,14 +2,17 @@ import cv2
 import random
 from PIL import Image
 import os
-from noise.BlurNoise import BlurNoise
-from noise.CircularLightNoise import CircularLightNoise
-from noise.GradientLightNoise import GradientLightNoise
-from noise.ImageNoise import ImageNoise
-from noise.LightNoise import LightNoise
-from noise.SPNoise import SPNoise
+from .noise.BlurNoise import BlurNoise
+from .noise.CircularLightNoise import CircularLightNoise
+from .noise.GradientLightNoise import GradientLightNoise
+from .noise.ImageNoise import ImageNoise
+from .noise.LightNoise import LightNoise
+from .noise.SPNoise import SPNoise
 import PIL.ImageOps
 import numpy as np
+
+package_directory = os.path.dirname(os.path.abspath(__file__))
+parent_path = "/".join(package_directory.split("/")[:-1]) + "/"
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -38,33 +41,34 @@ def get_new_plate_number():
 # Returns Address of a glyph image given font, and glyph name
 def get_glyph_address(glyph_name, c='grayscale'):
     if c == 'colorful':
-        return os.path.join("files/Glyphs/b_roya_color", "{}.png".format(glyph_name))
+        return os.path.join(parent_path + "files/Glyphs/b_roya_color", "{}.png".format(glyph_name))
     else:
-        return os.path.join("files/Glyphs/b_roya", "{}.png".format(glyph_name))
+        return os.path.join(parent_path + "files/Glyphs/b_roya", "{}.png".format(glyph_name))
+
 
 def get_template(plate):
     if plate[2] in ["D", "S"]:
-        background = Image.open("files/templates/template-diplomat.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-diplomat.png").convert("RGBA")
     elif plate[2] in ["TE", "EIN"]:
-        background = Image.open("files/templates/template-ommomi.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-ommomi.png").convert("RGBA")
     elif plate[2] in ["FE", "ZE"]:
-        background = Image.open("files/templates/template-defa.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-defa.png").convert("RGBA")
     elif plate[2] in ["SHIN"]:
-        background = Image.open("files/templates/template-artesh.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-artesh.png").convert("RGBA")
     elif plate[2] in ["PE"]:
-        background = Image.open("files/templates/template-police.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-police.png").convert("RGBA")
     elif plate[2] in ["SE"]:
-        background = Image.open("files/templates/template-sepah.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-sepah.png").convert("RGBA")
     elif plate[2] in ["ALEF"]:
-        background = Image.open("files/templates/template-dolati.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-dolati.png").convert("RGBA")
     elif plate[2] in ["TASHRIFAT"]:
-        background = Image.open("files/templates/template-tashrifat.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-tashrifat.png").convert("RGBA")
     elif plate[2] in ["KAF"]:
-        background = Image.open("files/templates/template-.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-.png").convert("RGBA")
     elif plate[2] in ["GAF"]:
-        background = Image.open("files/templates/template-gozar.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-gozar.png").convert("RGBA")
     else:
-        background = Image.open("files/templates/template-base.png").convert("RGBA")
+        background = Image.open(parent_path + "files/templates/template-base.png").convert("RGBA")
     return background
 
 
@@ -116,18 +120,18 @@ def adjust_glyphs(glyph_images, plate):
 
 
 def create_noise_palettes():
-    image_noise1 = ImageNoise('./files/noises/noise1.png')
-    image_noise2 = ImageNoise('./files/noises/noise2.png')
-    image_noise3 = ImageNoise('./files/noises/noise3.png')
-    image_noise4 = ImageNoise('./files/noises/noise4.png')
-    image_noise5 = ImageNoise('./files/noises/noise5.png')
-    image_noise6 = ImageNoise('./files/noises/noise6.png')
-    image_noise9 = ImageNoise('./files/noises/noise9.png')
+    image_noise1 = ImageNoise(parent_path + 'files/noises/noise1.png')
+    image_noise2 = ImageNoise(parent_path + 'files/noises/noise2.png')
+    image_noise3 = ImageNoise(parent_path + 'files/noises/noise3.png')
+    image_noise4 = ImageNoise(parent_path + 'files/noises/noise4.png')
+    image_noise5 = ImageNoise(parent_path + 'files/noises/noise5.png')
+    image_noise6 = ImageNoise(parent_path + 'files/noises/noise6.png')
+    image_noise9 = ImageNoise(parent_path + 'files/noises/noise9.png')
     noise_set1 = [image_noise1, image_noise2, image_noise3, image_noise4, image_noise5, image_noise6, image_noise9]
 
-    image_noise7 = ImageNoise('./files/noises/noise7.png')
-    image_noise8 = ImageNoise('./files/noises/noise8.png')
-    image_noise10 = ImageNoise('./files/noises/noise10.png')
+    image_noise7 = ImageNoise(parent_path + 'files/noises/noise7.png')
+    image_noise8 = ImageNoise(parent_path + 'files/noises/noise8.png')
+    image_noise10 = ImageNoise(parent_path + 'files/noises/noise10.png')
 
     ##################################
     # Generate randoms

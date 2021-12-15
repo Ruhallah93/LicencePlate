@@ -1,14 +1,19 @@
-from perspective.Perspective import create_perspective
-import Utils as utils
+from .Utils import *
+from .Perspective import create_perspective
 from PIL import Image
 import random
+
+import os
+
+package_directory = os.path.dirname(os.path.abspath(__file__))
+parent_path = "/".join(package_directory.split("/")[:-1]) + "/"
 
 
 def get_new_plate(img_size, mask_state='grayscale'):
     """
         mask_state: grayscale or colorful
     """
-    plate = utils.get_new_plate_number()
+    plate = get_new_plate_number()
 
     # Create a blank image with size of templates
     # and add the background and glyph images
@@ -16,25 +21,25 @@ def get_new_plate(img_size, mask_state='grayscale'):
     mask = new_plate.copy()
 
     # Get the background associated with the letter plate[2]
-    background = utils.get_template(plate)
+    background = get_template(plate)
 
     # Merge the plate with the background
     new_plate.paste(background, (0, 0))
-    white_background = Image.open("files/templates/white.png").convert("RGBA")
+    white_background = Image.open(parent_path + "files/templates/white.png").convert("RGBA")
     mask.paste(white_background, (0, 0))
 
     # Get the glyphs of plate
-    glyph_images, glyph_images_mask = utils.apply_glyphs(plate, mask_state)
+    glyph_images, glyph_images_mask = apply_glyphs(plate, mask_state)
 
     # adding glyph images with 11 pixel margin
-    new_plate = utils.adjust_glyphs(glyph_images, new_plate)
-    mask = utils.adjust_glyphs(glyph_images_mask, mask)
+    new_plate = adjust_glyphs(glyph_images, new_plate)
+    mask = adjust_glyphs(glyph_images_mask, mask)
 
     _newPlate = new_plate.resize((312, 70), Image.ANTIALIAS)
     mask = mask.resize((312, 70), Image.ANTIALIAS)
 
     # Add noise to plate
-    noise_set1, noise_set2, noise_set3 = utils.create_noise_palettes()
+    noise_set1, noise_set2, noise_set3 = create_noise_palettes()
     r = random.randint(0, 3)
     noises = []
     if r == 1:
