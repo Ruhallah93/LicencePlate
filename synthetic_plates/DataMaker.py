@@ -36,8 +36,10 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
 
-        address = address + "/" if address[-1] != "\\" else address
-        directory = address + "images/" if save_mask else address
+        separetor = os.sep
+
+        address = address + separetor if address[-1] != separetor else address
+        directory = address + "images" + separetor if save_mask else address
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -59,7 +61,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
 
         # Save masks
         if save_mask:
-            directory = address + "masks/"
+            directory = address + "masks" + separetor
             if not os.path.exists(directory):
                 os.makedirs(directory)
             masked = Image.fromarray(mask)
@@ -84,8 +86,18 @@ if __name__ == '__main__':
     # opt.save_bounding_boxes = True
     # opt.mask_state = "grayscale"
 
-    if not os.path.exists(opt.address):
-        os.makedirs(opt.address)
+    address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
+    directory = address + "images" + os.sep if opt.save_mask else address
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    directory = address + "masks" + os.sep if opt.save_mask else address
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # if not os.path.exists(opt.address):
+    #     os.makedirs(opt.address)
 
     size = opt.size
     max_threads = opt.workers

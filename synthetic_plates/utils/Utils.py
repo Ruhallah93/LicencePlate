@@ -11,8 +11,9 @@ from .noise.SPNoise import SPNoise
 import PIL.ImageOps
 import numpy as np
 
+separetor = os.sep
 package_directory = os.path.dirname(os.path.abspath(__file__))
-parent_path = "/".join(package_directory.split("/")[:-1]) + "/"
+parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -47,28 +48,29 @@ def get_glyph_address(glyph_name, c='grayscale'):
 
 
 def get_template(plate):
+    temp_address = os.path.join(*(parent_path, 'files', 'templates')) + separetor
     if plate[2] in ["D", "S"]:
-        background = Image.open(parent_path + "files/templates/template-diplomat.png").convert("RGBA")
+        background = Image.open(temp_address + "template-diplomat.png").convert("RGBA")
     elif plate[2] in ["TE", "EIN"]:
-        background = Image.open(parent_path + "files/templates/template-ommomi.png").convert("RGBA")
+        background = Image.open(temp_address + "template-ommomi.png").convert("RGBA")
     elif plate[2] in ["FE", "ZE"]:
-        background = Image.open(parent_path + "files/templates/template-defa.png").convert("RGBA")
+        background = Image.open(temp_address + "template-defa.png").convert("RGBA")
     elif plate[2] in ["SHIN"]:
-        background = Image.open(parent_path + "files/templates/template-artesh.png").convert("RGBA")
+        background = Image.open(temp_address + "template-artesh.png").convert("RGBA")
     elif plate[2] in ["PE"]:
-        background = Image.open(parent_path + "files/templates/template-police.png").convert("RGBA")
+        background = Image.open(temp_address + "template-police.png").convert("RGBA")
     elif plate[2] in ["SE"]:
-        background = Image.open(parent_path + "files/templates/template-sepah.png").convert("RGBA")
+        background = Image.open(temp_address + "template-sepah.png").convert("RGBA")
     elif plate[2] in ["ALEF"]:
-        background = Image.open(parent_path + "files/templates/template-dolati.png").convert("RGBA")
+        background = Image.open(temp_address + "template-dolati.png").convert("RGBA")
     elif plate[2] in ["TASHRIFAT"]:
-        background = Image.open(parent_path + "files/templates/template-tashrifat.png").convert("RGBA")
+        background = Image.open(temp_address + "template-tashrifat.png").convert("RGBA")
     elif plate[2] in ["KAF"]:
-        background = Image.open(parent_path + "files/templates/template-.png").convert("RGBA")
+        background = Image.open(temp_address + "template-.png").convert("RGBA")
     elif plate[2] in ["GAF"]:
-        background = Image.open(parent_path + "files/templates/template-gozar.png").convert("RGBA")
+        background = Image.open(temp_address + "template-gozar.png").convert("RGBA")
     else:
-        background = Image.open(parent_path + "files/templates/template-base.png").convert("RGBA")
+        background = Image.open(temp_address + "template-base.png").convert("RGBA")
     return background
 
 

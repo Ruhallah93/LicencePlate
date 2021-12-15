@@ -5,9 +5,9 @@ import random
 
 import os
 
+separetor = os.sep
 package_directory = os.path.dirname(os.path.abspath(__file__))
-parent_path = "/".join(package_directory.split("/")[:-1]) + "/"
-
+parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
 
 def get_new_plate(img_size, mask_state='grayscale'):
     """
