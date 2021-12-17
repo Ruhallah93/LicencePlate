@@ -93,6 +93,46 @@ def get_iou(box1, box2):
 
   return iou
 
+def merger(boxes):
+
+  """
+  It recieves predicted boxes as input and find boxes with overlaps
+  Then choose the box with higher confidence
+  It is not guranteed but the output would probably be 8 boxes
+  """
+
+  """
+    boxes are in format list of tuples
+    (x, y, width, height, confidence, label)
+    it doesn't matter whether numbers are normalized or not
+    because it does not effect IoU
+  """
+
+
+  i = 0 # the predicted box we are checking
+  final_det = []
+
+  
+
+  while i < len(boxes) - 1 :
+    
+    c_x, c_y, c_w, c_h = boxes[i][0], boxes[i][1], boxes[i][2], boxes[i][3]
+    n_x, n_y, n_w, n_h = boxes[i + 1][0], boxes[i + 1][1], boxes[i + 1][2], boxes[i + 1][3]
+
+    current_box = (c_x, c_y, c_w, c_h)
+    next_box = (n_x, n_y, n_w, n_h)
+    
+    if get_iou(current_box, next_box) > 0.6 :
+
+      index_to_remove =  i + 1 if boxes[i][-2] > boxes[i + 1][-2] else i  
+      del boxes[index_to_remove]
+
+    else:
+      final_det.append(boxes[i])
+      i += 1
+
+  final_det.append(boxes[i])
+  return final_det
 
 
 def update_confusion(confusion_matrix, predicted_box, gt_boxes, predicted_cls, gt_cls, missed_boxes):
@@ -104,8 +144,7 @@ def update_confusion(confusion_matrix, predicted_box, gt_boxes, predicted_cls, g
   for gt_box in gt_boxes:
     ious.append(get_iou(gt_box, predicted_box))
   
-  
-  
+
   max_iou = np.argmax(ious)
 
   missed_boxes[max_iou] = -1
@@ -179,6 +218,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
     dt, seen = [0.0, 0.0, 0.0], 0
+    counter = 0
     for path, im, im0s, vid_cap, s in dataset:
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
@@ -202,18 +242,20 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
         
-        confusion_matrix = np.zeros((len(names) + 1, len(names) + 1)) # +1 for unknown
+        # confusion_matrix = np.zeros((len(names) + 1, len(names) + 1)) # +1 for unknown
 
-        plate_chars = path.split("/")[-1].split(".")[0].split("_") # list
-        plate_chars = list(plate_chars[0]) + [plate_chars[1]] + list(plate_chars[2]) # ground-truth list
-
-
+        # plate_chars = path.split("/")[-1].split(".")[0].split("_") # list
+        # plate_chars = list(plate_chars[0]) + [plate_chars[1]] + list(plate_chars[2]) # ground-truth list
 
 
+
+        
         # Process predictions
         for i, det in enumerate(pred):  # per image
             seen += 1
-
+            plate_chars = path.split("/")[-1].split(".")[0].split("_") # list
+            plate_chars = list(plate_chars[0]) + [plate_chars[1]] + list(plate_chars[2])
+            plate_chars = ''.join(plate_chars)
 
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -233,20 +275,43 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
 
                 det_sorted = sorted(det, key=lambda box: box[0]) # sort by X coordinate
-            
-                gt_boxes, gt_cls = get_ground_truth("/content/test/label/" + path.split("/")[-1].split(".")[0] + ".txt")
                 
-                missed_boxes = list(range(8))
+                for i, item in enumerate(det_sorted):
+                  det_sorted[i] = det_sorted[i].cpu().numpy()
+                
+                final_det = merger(det_sorted)
+                final_det = sorted(final_det, key=lambda x: x[-2], reverse=True)
+                final_det = final_det[:8]
 
-                for prediction in det_sorted:
-                  x1, y1, x2, y2, cls = prediction[0].item(), prediction[1].item(), prediction[2].item(), prediction[3].item(), prediction[-1].item()
+                final_det = sorted(final_det, key=lambda x: x[0])
+
+                predicted_string = ""
+                for c in final_det:
+                  predicted_string += str(names[int(c[-1])])
+                
+                # print("plate_chars", plate_chars)
+                # print("predicted_string", predicted_string)
+                
+                if plate_chars == predicted_string:
+                  counter += 1
+                else:
+                  print("detected wrong", plate_chars)
+
+
+                
+                # gt_boxes, gt_cls = get_ground_truth("/content/test/label/" + path.split("/")[-1].split(".")[0] + ".txt")
+                
+                # missed_boxes = list(range(8))
+
+                # for prediction in det_sorted:
+                #   x1, y1, x2, y2, cls = prediction[0].item(), prediction[1].item(), prediction[2].item(), prediction[3].item(), prediction[-1].item()
                   
-                  predicted_box = (x1, y1, x2, y2)
-                  confusion_matrix = update_confusion(confusion_matrix, predicted_box, gt_boxes, int(cls), gt_cls, missed_boxes)
+                #   predicted_box = (x1, y1, x2, y2)
+                #   confusion_matrix = update_confusion(confusion_matrix, predicted_box, gt_boxes, int(cls), gt_cls, missed_boxes)
 
-                for missed_box in missed_boxes:
-                  if missed_box != -1:
-                    confusion_matrix[gt_cls[missed_box], len(names)] += 1
+                # for missed_box in missed_boxes:
+                #   if missed_box != -1:
+                #     confusion_matrix[gt_cls[missed_box], len(names)] += 1
 
                 # Print results
                 for c in det[:, -1].unique():
@@ -254,7 +319,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
-                for *xyxy, conf, cls in reversed(det):
+                for *xyxy, conf, cls in final_det:
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -297,11 +362,11 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     vid_writer[i].write(im0)
 
     # Print results
-    df = pd.DataFrame(confusion_matrix, columns=list(names) + ["unknown"], index=list(names) + ["unknown"])
-    df.to_csv("/content/confusion_matrix.csv")
+    # df = pd.DataFrame(confusion_matrix, columns=list(names) + ["unknown"], index=list(names) + ["unknown"])
+    # df.to_csv("/content/confusion_matrix.csv")
     
     # print(confusion_matrix)
-
+    print("Number of correct predictions: ", counter)
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if save_txt or save_img:
