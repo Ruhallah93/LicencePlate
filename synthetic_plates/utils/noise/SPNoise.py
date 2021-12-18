@@ -24,7 +24,7 @@ class SPNoise(Noise):
         if self.bw:
             out[coords[0], coords[1], :] = self.salt_color
         else:
-            out[coords] = self.salt_color
+            out[coords[0], coords[1], coords[2]] = self.salt_color
 
         # Pepper mode
         num_pepper = np.ceil(self.amount * img.size * (1. - self.s_vs_p))
@@ -33,7 +33,7 @@ class SPNoise(Noise):
         if self.bw:
             out[coords[0], coords[1], :] = self.pepper_color
         else:
-            out[coords] = self.pepper_color
+            out[coords[0], coords[1], coords[2]] = self.pepper_color
 
         # cv2.imshow('end', out)
         # cv2.waitKey()

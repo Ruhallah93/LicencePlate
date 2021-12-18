@@ -71,6 +71,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
 
 
 if __name__ == '__main__':
+    # For test: set workers default to 1
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=2000, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=10, help='number of threads to run')

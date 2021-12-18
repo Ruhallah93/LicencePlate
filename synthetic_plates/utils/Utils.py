@@ -5,6 +5,7 @@ import os
 from .noise.BlurNoise import BlurNoise
 from .noise.CircularLightNoise import CircularLightNoise
 from .noise.GradientLightNoise import GradientLightNoise
+from .noise.NegativeNoise import NegativeNoise
 from .noise.ImageNoise import ImageNoise
 from .noise.LightNoise import LightNoise
 from .noise.SPNoise import SPNoise
@@ -14,6 +15,9 @@ import numpy as np
 separetor = os.sep
 package_directory = os.path.dirname(os.path.abspath(__file__))
 parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
+
+# Def license plate size, License plate shape: (312, 70)
+lp_size = (312, 70)
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -137,8 +141,7 @@ def create_noise_palettes():
 
     ##################################
     # Generate randoms
-    # License plate shape: (312, 70)
-    img_shape = (312, 70)
+    img_shape = lp_size
     blur_kernel_size = random.choice(np.arange(3, 8, 2))
     blur_sigma = random.randint(3, 8)
     light_param = random.randint(-170, 170)
@@ -168,10 +171,11 @@ def create_noise_palettes():
     circular_light_noise = CircularLightNoise(light_param=light_param, n_circle=n_circle,
                                               r_circle=r_circle, kernel_sigma=kernel_sigma)
     s_p_noise = SPNoise(s_vs_p=0.5, amount=amount_sp, bw=bw_random, pepper_color=pepper_color, salt_color=salt_color)
+    negative_noise = NegativeNoise(blur_kernel_size=0, negative_param=-10, area=area)
 
     # lightNoise2 = ...
     noise_set2 = [image_noise7, image_noise8, image_noise10, light_noise,
-                  gradient_light_noise, circular_light_noise, s_p_noise]
+                  gradient_light_noise, circular_light_noise, s_p_noise, negative_noise]
 
     # BlurNoises
     blur_noise = BlurNoise(blur_type='gaussian', blur_kernel_size=blur_kernel_size, blur_sigma=blur_sigma)
@@ -187,17 +191,31 @@ def set_background(img, mask, merged_boxes, width, height, random_scale=0.5, sca
                    position=-1):
     """
     img: plate image
-    width, height: width & height of background
+    width, height: width & height of background, if width == -1: make a random number for width
+    and if width < def license plate size: width = lp_size[0]
     random_scale: =0, dont scale img. !=0, resize img with random scale between img.dim -+ img.dim * random_scale
     scale_ratio: True= remain license ratio
     background: background image, if pass this argument -1, set a random static color for background
     position: position of license plate in the background, if pass -1 generate a random position
     """
+    # Random background size
+    if width == -1:
+        width = random.randint(lp_size[0], 600)
+    if height == -1:
+        height = random.randint(lp_size[1], 400)
+
+    # Exception handling
+    if width < lp_size[0]:
+        width = lp_size[0]
+    if height < lp_size[1]:
+        height = lp_size[1]
+
     new_merged_boxes = np.array(merged_boxes)
 
+    # cv2.imshow('d', img)
     # Resize plate
     if random_scale != 0:
-        # cv2.imshow('d', img)
+        # Make (random) scale and then set new_width and new_height
         if scale_ratio:
             my_random_scale = (random.random() * (1 + random_scale - (1 - random_scale))) + 1 - random_scale
             new_width = int(img.shape[1] * my_random_scale)
@@ -207,12 +225,16 @@ def set_background(img, mask, merged_boxes, width, height, random_scale=0.5, sca
                                        int(img.shape[1] + img.shape[1] * random_scale))
             new_height = random.randint(int(img.shape[0] - img.shape[0] * random_scale),
                                         int(img.shape[0] + img.shape[0] * random_scale))
-        new_merged_boxes[:, 0] = (new_merged_boxes[:, 0] / img.shape[1]) * new_width
-        new_merged_boxes[:, 1] = (new_merged_boxes[:, 1] / img.shape[0]) * new_height
-        new_merged_boxes[:, 2] = (new_merged_boxes[:, 2] / img.shape[1]) * new_width
-        new_merged_boxes[:, 3] = (new_merged_boxes[:, 3] / img.shape[0]) * new_height
-        img = cv2.resize(img, (new_width, new_height))
-        mask = cv2.resize(mask, (new_width, new_height))
+
+        # Check license plate is not bigger than background
+        if new_height < height and new_width < width:
+            # print("shod")
+            new_merged_boxes[:, 0] = (new_merged_boxes[:, 0] / img.shape[1]) * new_width
+            new_merged_boxes[:, 1] = (new_merged_boxes[:, 1] / img.shape[0]) * new_height
+            new_merged_boxes[:, 2] = (new_merged_boxes[:, 2] / img.shape[1]) * new_width
+            new_merged_boxes[:, 3] = (new_merged_boxes[:, 3] / img.shape[0]) * new_height
+            img = cv2.resize(img, (new_width, new_height))
+            mask = cv2.resize(mask, (new_width, new_height))
 
     # Add background to plate
     if background == -1:
@@ -229,5 +251,6 @@ def set_background(img, mask, merged_boxes, width, height, random_scale=0.5, sca
         mask_background[y_position:y_position + img.shape[0], x_position:x_position + img.shape[1]] = mask
         new_merged_boxes[:, 0] = x_position + new_merged_boxes[:, 0]
         new_merged_boxes[:, 1] = y_position + new_merged_boxes[:, 1]
-
+    # cv2.imshow('sd', background)
+    # cv2.waitKey(0)
     return background, mask_background, new_merged_boxes
