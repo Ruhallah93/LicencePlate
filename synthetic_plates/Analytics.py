@@ -29,7 +29,7 @@ def get_number_analytics(directory):
         info_per_plate[parts[1]] += 1
 
     info = pd.DataFrame.from_dict({"Overall": info_overall, "Per Plate": info_per_plate})
-    info['Rate (O/P)'] = info[info.columns[0]] / info[info.columns[1]]
+    info['Ratio (O/P)'] = info[info.columns[0]] / info[info.columns[1]]
     return info
 
 
