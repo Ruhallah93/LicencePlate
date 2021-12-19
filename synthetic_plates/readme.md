@@ -49,3 +49,13 @@ Or:
 ```
 python3 DataMaker.py --size 5000 --workers 10 --img_size 500 400 --save_mask --mask_state "colorful" --address "output/unet/test"
 ```
+
+
+<h1>Analytics</h1>
+<h3>Example</h3>
+
+In order to count characters:
+
+```
+python3 Analytics.py --address output/unet/ --save_path output/
+```
