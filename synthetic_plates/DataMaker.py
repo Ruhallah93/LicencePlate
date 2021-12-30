@@ -23,7 +23,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
         plate, perspective_plate, mask, bonding_boxes = get_new_plate(img_size, mask_state=mask_state)
 
         if save_bounding_boxes:
-            if len(bonding_boxes) != 8:
+            if len(bonding_boxes) == 8:
                 counter += 1
                 print("len(merged_boxes): ", len(bonding_boxes))
                 for box in bonding_boxes:
@@ -31,7 +31,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
                     cv2.rectangle(perspective_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
                 cv2.imshow('perspective_plate', perspective_plate)
                 cv2.imshow('mask', mask)
-                cv2.waitKey()
+                cv2.waitKey(1000)
                 continue
             # Save Glyphs
 
@@ -97,8 +97,8 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=100, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[500, 400], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     threadList = []
 
     opt.save_plate = True
-    opt.save_mask = False
+    opt.save_mask = True
     opt.save_bounding_boxes = True
     opt.save_glyphs = True
     opt.mask_state = "grayscale"

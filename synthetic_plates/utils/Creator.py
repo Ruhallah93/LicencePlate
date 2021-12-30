@@ -9,6 +9,7 @@ separetor = os.sep
 package_directory = os.path.dirname(os.path.abspath(__file__))
 parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
 
+
 def get_new_plate(img_size, mask_state='grayscale'):
     """
         mask_state: grayscale or colorful
@@ -56,6 +57,7 @@ def get_new_plate(img_size, mask_state='grayscale'):
 
     # Make the plate perspective
     perspective_plate, mask, bounding_boxes = create_perspective(_newPlate, mask, img_size=img_size, noises=noises,
-                                                                 pad=(50, 50, 10, 10))
+                                                                 perspective_type=np.random.random_integers(0, 5),
+                                                                 pad=(50, 50, 50, 50))
 
     return plate, perspective_plate, mask, bounding_boxes

@@ -4,6 +4,7 @@ import functools
 
 from .Utils import set_background
 
+
 def compare(rect1, rect2):
     if abs(rect1[1] - rect2[1]) > 10:
         return rect1[1] - rect2[1]
@@ -64,47 +65,98 @@ def get_bounding_boxes(img):
     return merged_boxes, boundingBoxes
 
 
-def get_perspective_matrix(width, height, prespectiveType: int = 1,
-                           pad: tuple = (100, 100, 100, 100), const_h=30, const_w=15):
+def get_rotate_matrix(x, y, angle):
+    angle = np.deg2rad(angle)  # degree to radian
+    move_matrix = np.array(
+        [
+            [1, 0, x],
+            [0, 1, y],
+            [0, 0, 1]
+        ])
+    rotation_matrix = np.array(
+        [
+            [np.cos(angle), -np.sin(angle), 0],
+            [np.sin(angle), np.cos(angle), 0],
+            [0, 0, 1]
+        ])
+    back_matrix = np.array(
+        [
+            [1, 0, -x],
+            [0, 1, -y],
+            [0, 0, 1]
+        ])
+
+    return (move_matrix @ rotation_matrix) @ back_matrix
+
+
+def roll(p1, p2, p3, p4, x, y, theta):
+    rotate = get_rotate_matrix(x, y, theta)
+    p = [[p1[0], p2[0], p3[0], p4[0]],
+         [p1[1], p2[1], p3[1], p4[1]],
+         [1, 1, 1, 1]]
+    p1, p2, p3, p4 = (rotate @ p).T[:, :2]
+    return p1, p2, p3, p4
+
+
+def pitch(p1, p2, p3, p4, type, const_h):
+    if type == 1:
+        p1 = (p1[0] - const_h, p1[1] + const_h)
+        p2 = (p2[0] + const_h, p2[1] + const_h)
+        p3 = (p3[0] - const_h, p3[1] - const_h)
+        p4 = (p4[0] + const_h, p4[1] - const_h)
+    else:
+        p1 = (p1[0] + const_h, p1[1] + const_h)
+        p2 = (p2[0] - const_h, p2[1] + const_h)
+        p3 = (p3[0] + const_h, p3[1] - const_h)
+        p4 = (p4[0] - const_h, p4[1] - const_h)
+    return p1, p2, p3, p4
+
+
+def yaw(p1, p2, p3, p4, type, const_h):
+    if type == 1:
+        p1 = (p1[0] + const_h, p1[1] - const_h)
+        p2 = (p2[0] - const_h, p2[1] + const_h)
+        p3 = (p3[0] - const_h, p3[1] - const_h)
+        p4 = (p4[0] + const_h, p4[1] + const_h)
+    else:
+        p1 = (p1[0] + const_h, p1[1] + const_h)
+        p2 = (p2[0] - const_h, p2[1] - const_h)
+        p3 = (p3[0] - const_h, p3[1] + const_h)
+        p4 = (p4[0] + const_h, p4[1] - const_h)
+    return p1, p2, p3, p4
+
+
+def get_perspective_matrix(width, height, perspective_type, pad: tuple = (100, 100, 100, 100)):
     """
     get prespective matrix for an image
     """
     p1, p2, p3, p4 = ((pad[2], pad[0]),
                       (pad[2] + width - 1, pad[0]),
                       (pad[2] + width - 1, pad[0] + height - 1),
-                      (pad[2], pad[0] + height - 1)
-                      )
+                      (pad[2], pad[0] + height - 1))
     inp = np.float32([[p1[0], p1[1]],
                       [p2[0], p2[1]],
                       [p3[0], p3[1]],
                       [p4[0], p4[1]]])
 
-    if prespectiveType == 1:
-        p2 = (p2[0], p2[1] - const_h)
-        p3 = (p3[0], p3[1] - const_h)
-    elif prespectiveType == 2:
-        p2 = (p2[0], p2[1] + const_h)
-        p3 = (p3[0], p3[1] + const_h)
-    elif prespectiveType == 3:
-        p1 = (p1[0], p1[1] - const_h)
-        p4 = (p4[0], p4[1] - const_h)
-    elif prespectiveType == 4:
-        p1 = (p1[0], p1[1] + const_h)
-        p4 = (p4[0], p4[1] + const_h)
-    elif prespectiveType == 5:
-        p2 = (p2[0], p2[1] - const_h)
-        p3 = (p3[0], p3[1] - const_h)
-
-        p1 = (p1[0], p1[1] + const_h)
-        p4 = (p4[0], p4[1] + const_h)
-    elif prespectiveType == 6:
-        p2 = (p2[0], p2[1] + const_h)
-        p3 = (p3[0], p3[1] + const_h)
-
-        p1 = (p1[0], p1[1] - const_h)
-        p4 = (p4[0], p4[1] - const_h)
-    else:
-        return None
+    direction = np.random.choice([1, -1])
+    theta = np.random.randint(0, 15) * direction
+    step_length = np.random.randint(1, 30)
+    if perspective_type == 1:
+        p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
+    if perspective_type == 2:
+        p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
+    if perspective_type == 3:
+        p1, p2, p3, p4 = roll(p1, p2, p3, p4, x=width / 2, y=height / 2, theta=theta)
+    if perspective_type == 4:
+        p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
+        step_length = np.random.randint(1, 30)
+        p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
+    if perspective_type == 5:
+        p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
+        step_length = np.random.randint(1, 30)
+        p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
+        p1, p2, p3, p4 = roll(p1, p2, p3, p4, x=width / 2, y=height / 2, theta=theta)
 
     out = np.float32([[p1[0], p1[1]],
                       [p2[0], p2[1]],
@@ -114,25 +166,79 @@ def get_perspective_matrix(width, height, prespectiveType: int = 1,
     return cv2.getPerspectiveTransform(inp, out)
 
 
-def create_perspective(img, mask, img_size: tuple, noises: list, prespectiveType: int = 0,
+# def get_perspective_matrix(width, height, pad: tuple = (100, 100, 100, 100)):
+#     """
+#     get prespective matrix for an image
+#     """
+#     p1, p2, p3, p4 = ((pad[2], pad[0]),
+#                       (pad[2] + width - 1, pad[0]),
+#                       (pad[2] + width - 1, pad[0] + height - 1),
+#                       (pad[2], pad[0] + height - 1)
+#                       )
+#     inp = np.float32([[p1[0], p1[1]],
+#                       [p2[0], p2[1]],
+#                       [p3[0], p3[1]],
+#                       [p4[0], p4[1]]])
+#
+#     if prespectiveType == 1:
+#         p2 = (p2[0], p2[1] - const_h)
+#         p3 = (p3[0], p3[1] - const_h)
+#     elif prespectiveType == 2:
+#         p2 = (p2[0], p2[1] + const_h)
+#         p3 = (p3[0], p3[1] + const_h)
+#     elif prespectiveType == 3:
+#         p1 = (p1[0], p1[1] - const_h)
+#         p4 = (p4[0], p4[1] - const_h)
+#     elif prespectiveType == 4:
+#         p1 = (p1[0], p1[1] + const_h)
+#         p4 = (p4[0], p4[1] + const_h)
+#     elif prespectiveType == 5:
+#         p2 = (p2[0], p2[1] - const_h)
+#         p3 = (p3[0], p3[1] - const_h)
+#
+#         p1 = (p1[0], p1[1] + const_h)
+#         p4 = (p4[0], p4[1] + const_h)
+#     elif prespectiveType == 6:
+#         p2 = (p2[0], p2[1] + const_h)
+#         p3 = (p3[0], p3[1] + const_h)
+#
+#         p1 = (p1[0], p1[1] - const_h)
+#         p4 = (p4[0], p4[1] - const_h)
+#     else:
+#         return None
+#
+#     out = np.float32([[p1[0], p1[1]],
+#                       [p2[0], p2[1]],
+#                       [p3[0], p3[1]],
+#                       [p4[0], p4[1]]])
+#
+#     return cv2.getPerspectiveTransform(inp, out)
+
+def after_transform(p, matrix):
+    px = (matrix[0][0] * p[0] + matrix[0][1] * p[1] + matrix[0][2]) / (
+        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
+    py = (matrix[1][0] * p[0] + matrix[1][1] * p[1] + matrix[1][2]) / (
+        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
+    return [int(px), int(py), 1]
+
+
+def create_perspective(img, mask, img_size: tuple, noises: list, perspective_type: int = 1,
                        pad: tuple = (100, 100, 100, 100)):
     """
-    This function applies prespective to the image with the given path
+    This function applies perspective to the image with the given path
 
     Keyword arguments:
     pathToImage -- path to the image file in png format (string)
-    prespectiveType -- type of prespective (integer between 0 to 6), if 0 acts random o.w a specific prespective
+    perspectiveType -- type of perspective (integer between 1 to 6), others mean no perspective
             would be applied
     pad -- padding for the image (top,bottom,left,right)
 
-    returns -- a tuple: (altered image with prespective good for bounding box extraction, original image that
-                            with paddings and same prespective)
+    returns -- a tuple: (altered image with perspective good for bounding box extraction, original image that
+                            with paddings and same perspective)
     """
 
     # if not pathToImage.endswith('.png'):
     #     raise Exception('Only png files are supported.')
-    if type(prespectiveType) != int or prespectiveType not in range(0, 7):
-        raise Exception('prespectiveType argument must be and integer between 1 to 6.')
     if type(pad) != tuple or len(pad) != 4:
         raise Exception('pad argument must be a tuple of size 4 with integers inside')
 
@@ -156,10 +262,7 @@ def create_perspective(img, mask, img_size: tuple, noises: list, prespectiveType
     merged_boxes[:, 0] = merged_boxes[:, 0] + pad[2]
     merged_boxes[:, 1] = merged_boxes[:, 1] + pad[0]
 
-    pType = prespectiveType
-    if prespectiveType == 0:
-        pType = np.random.randint(1, 7)
-    matrix = get_perspective_matrix(width, height, pType)
+    matrix = get_perspective_matrix(width, height, perspective_type, pad=(0, 0, 0, 0))
     newHeight, newWidth = mask.shape[:2]
 
     imgOutput = mask.copy()
@@ -171,15 +274,11 @@ def create_perspective(img, mask, img_size: tuple, noises: list, prespectiveType
                                           cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
                                           borderValue=(0, 0, 0))
 
-    up_left_boxes = np.array([[x, y, 1] for (x, y, w, h) in merged_boxes]).T
-    down_right_boxes = np.array([[x + w, y + h, 1] for (x, y, w, h) in merged_boxes]).T
-    up_right_boxes = np.array([[x + w, y, 1] for (x, y, w, h) in merged_boxes]).T
-    down_left_boxes = np.array([[x, y + h, 1] for (x, y, w, h) in merged_boxes]).T
+    up_left_boxes = np.array([after_transform([x, y], matrix) for (x, y, w, h) in merged_boxes]).T
+    down_right_boxes = np.array([after_transform([x + w, y + h], matrix) for (x, y, w, h) in merged_boxes]).T
+    up_right_boxes = np.array([after_transform([x + w, y], matrix) for (x, y, w, h) in merged_boxes]).T
+    down_left_boxes = np.array([after_transform([x, y + h], matrix) for (x, y, w, h) in merged_boxes]).T
 
-    up_left_boxes = matrix @ up_left_boxes
-    down_right_boxes = matrix @ down_right_boxes
-    up_right_boxes = matrix @ up_right_boxes
-    down_left_boxes = matrix @ down_left_boxes
     boxes = []
     for (ul, dr, ur, dl) in zip(up_left_boxes.T, down_right_boxes.T, up_right_boxes.T, down_left_boxes.T):
         x = int(np.min([ul[0], dr[0], ur[0], dl[0]]))
