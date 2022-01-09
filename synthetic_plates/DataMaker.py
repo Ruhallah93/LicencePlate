@@ -23,7 +23,7 @@ def generate_and_save_plates(address, dataset_size: int = 200, img_size: tuple =
         plate, perspective_plate, mask, bonding_boxes = get_new_plate(img_size, mask_state=mask_state)
 
         if save_bounding_boxes:
-            if len(bonding_boxes) == 8:
+            if len(bonding_boxes) != 8:
                 counter += 1
                 print("len(merged_boxes): ", len(bonding_boxes))
                 for box in bonding_boxes:
@@ -110,11 +110,11 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     threadList = []
 
-    # opt.save_plate = True
-    # opt.save_mask = True
-    # opt.save_bounding_boxes = True
-    # opt.save_glyphs = True
-    # opt.mask_state = "grayscale"
+    opt.save_plate = True
+    opt.save_mask = True
+    opt.save_bounding_boxes = True
+    opt.save_glyphs = True
+    opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address
