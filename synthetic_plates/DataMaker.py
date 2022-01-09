@@ -110,11 +110,11 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     threadList = []
 
-    opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
-    opt.save_glyphs = True
-    opt.mask_state = "grayscale"
+    # opt.save_plate = True
+    # opt.save_mask = True
+    # opt.save_bounding_boxes = True
+    # opt.save_glyphs = True
+    # opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address
