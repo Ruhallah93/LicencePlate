@@ -13,6 +13,9 @@ class BlurNoise(Noise):
     def apply(self, img):
         # cv2.imshow("s", img)
 
+        # print(img.shape)
+
+
         # kernel size checking
         if self.blur_kernel_size % 2 == 0:
             self.blur_kernel_size += 1

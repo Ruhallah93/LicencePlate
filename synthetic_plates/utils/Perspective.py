@@ -210,15 +210,19 @@ def create_perspective(img, mask,
 
     before_altering = img.copy()
 
+    # Convert RBGA -> BGRA
+    # before_altering = cv2.cvtColor(before_altering, cv2.COLOR_RGBA2BGRA)
+
     # Apply noises
-    # for noise in noises:
-    #     before_altering = noise.apply(before_altering)
+    for noise in noises:
+        before_altering = noise.apply(before_altering)
 
     before_altering, mask, combined_boxed = set_background(before_altering, mask, combined_boxed,
                                                            background_size=img_size,
                                                            paste_point=paste_point,
                                                            min_random_scale=random_scale,
                                                            background_path=background_path)
+
 
     glyph_boxes = np.array(combined_boxed[:-1])
     plate_box = combined_boxed[-1]

@@ -206,7 +206,7 @@ def set_background(img, mask, merged_boxes,
     # Add background to plate
     if background_path == "r":
         r, g, b = random.randint(0, 256), random.randint(0, 256), random.randint(0, 256)
-        background = Image.new('RGBA', background_size, (r, g, b))
+        background = Image.new('RGBA', background_size, (r, g, b, 255))
     else:
         background = Image.open(background_path).convert("RGBA").resize(background_size)
     mask_background = Image.new('RGBA', background_size, (255, 255, 255, 255))

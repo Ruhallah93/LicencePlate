@@ -22,8 +22,7 @@ class NegativeNoise(Noise):
                       self.blur_kernel_size)
             img = cv2.medianBlur(img, self.blur_kernel_size)
 
-        # Change color space, BGR -> YUV
-        yuv_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+        yuv_img = self.RGBA2YUV(img)
 
         if not self.area == -1:
             if self.area[1][0] == - 1:
@@ -46,10 +45,8 @@ class NegativeNoise(Noise):
         y_noise = np.array(y_noise, dtype=np.uint8)
         yuv_img[:, :, 0] = y_noise
 
-        img_noise = cv2.cvtColor(yuv_img, cv2.COLOR_YUV2BGR)
-
         # Remove, just for test
         # cv2.imshow("d", img_noise)
         # cv2.waitKey()
 
-        return img_noise
+        return self.YUV2RGBA(yuv_img)
