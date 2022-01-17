@@ -126,36 +126,40 @@ def yaw(p1, p2, p3, p4, type, const_h):
     return p1, p2, p3, p4
 
 
-def get_perspective_matrix(width, height, perspective_type, pad: tuple = (100, 100, 100, 100)):
+def get_perspective_matrix(width, height, perspective_type, max_thetas):
     """
     get prespective matrix for an image
     """
-    p1, p2, p3, p4 = ((pad[2], pad[0]),
-                      (pad[2] + width - 1, pad[0]),
-                      (pad[2] + width - 1, pad[0] + height - 1),
-                      (pad[2], pad[0] + height - 1))
+    p1, p2, p3, p4 = ((0, 0),
+                      (0 + width - 1, 0),
+                      (0 + width - 1, 0 + height - 1),
+                      (0, 0 + height - 1))
     inp = np.float32([[p1[0], p1[1]],
                       [p2[0], p2[1]],
                       [p3[0], p3[1]],
                       [p4[0], p4[1]]])
 
     direction = np.random.choice([1, -1])
-    theta = np.random.randint(0, 15) * direction
-    step_length = np.random.randint(1, 30)
     if perspective_type == 1:
+        step_length = np.random.randint(1, max_thetas['pitch'][0])
         p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
     if perspective_type == 2:
+        step_length = np.random.randint(1, max_thetas['yaw'][0])
         p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
     if perspective_type == 3:
+        theta = np.random.randint(0, max_thetas['roll'][0]) * direction
         p1, p2, p3, p4 = roll(p1, p2, p3, p4, x=width / 2, y=height / 2, theta=theta)
     if perspective_type == 4:
+        step_length = np.random.randint(1, max_thetas['pitch+yaw'][0])
         p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
-        step_length = np.random.randint(1, 30)
+        step_length = np.random.randint(1, max_thetas['pitch+yaw'][1])
         p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
     if perspective_type == 5:
+        step_length = np.random.randint(1, max_thetas['pitch+yaw+roll'][0])
         p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
-        step_length = np.random.randint(1, 30)
+        step_length = np.random.randint(1, max_thetas['pitch+yaw+roll'][1])
         p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
+        theta = np.random.randint(0, max_thetas['pitch+yaw+roll'][2]) * direction
         p1, p2, p3, p4 = roll(p1, p2, p3, p4, x=width / 2, y=height / 2, theta=theta)
 
     out = np.float32([[p1[0], p1[1]],
@@ -166,103 +170,68 @@ def get_perspective_matrix(width, height, perspective_type, pad: tuple = (100, 1
     return cv2.getPerspectiveTransform(inp, out)
 
 
-# def get_perspective_matrix(width, height, pad: tuple = (100, 100, 100, 100)):
-#     """
-#     get prespective matrix for an image
-#     """
-#     p1, p2, p3, p4 = ((pad[2], pad[0]),
-#                       (pad[2] + width - 1, pad[0]),
-#                       (pad[2] + width - 1, pad[0] + height - 1),
-#                       (pad[2], pad[0] + height - 1)
-#                       )
-#     inp = np.float32([[p1[0], p1[1]],
-#                       [p2[0], p2[1]],
-#                       [p3[0], p3[1]],
-#                       [p4[0], p4[1]]])
-#
-#     if prespectiveType == 1:
-#         p2 = (p2[0], p2[1] - const_h)
-#         p3 = (p3[0], p3[1] - const_h)
-#     elif prespectiveType == 2:
-#         p2 = (p2[0], p2[1] + const_h)
-#         p3 = (p3[0], p3[1] + const_h)
-#     elif prespectiveType == 3:
-#         p1 = (p1[0], p1[1] - const_h)
-#         p4 = (p4[0], p4[1] - const_h)
-#     elif prespectiveType == 4:
-#         p1 = (p1[0], p1[1] + const_h)
-#         p4 = (p4[0], p4[1] + const_h)
-#     elif prespectiveType == 5:
-#         p2 = (p2[0], p2[1] - const_h)
-#         p3 = (p3[0], p3[1] - const_h)
-#
-#         p1 = (p1[0], p1[1] + const_h)
-#         p4 = (p4[0], p4[1] + const_h)
-#     elif prespectiveType == 6:
-#         p2 = (p2[0], p2[1] + const_h)
-#         p3 = (p3[0], p3[1] + const_h)
-#
-#         p1 = (p1[0], p1[1] - const_h)
-#         p4 = (p4[0], p4[1] - const_h)
-#     else:
-#         return None
-#
-#     out = np.float32([[p1[0], p1[1]],
-#                       [p2[0], p2[1]],
-#                       [p3[0], p3[1]],
-#                       [p4[0], p4[1]]])
-#
-#     return cv2.getPerspectiveTransform(inp, out)
-
-def after_transform(p, matrix):
-    px = (matrix[0][0] * p[0] + matrix[0][1] * p[1] + matrix[0][2]) / (
-        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
-    py = (matrix[1][0] * p[0] + matrix[1][1] * p[1] + matrix[1][2]) / (
-        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
-    return [int(px), int(py), 1]
-
-
-def create_perspective(img, mask, img_size: tuple, noises: list, perspective_type: int = 1,
-                       pad: tuple = (100, 100, 100, 100)):
+def create_perspective(img, mask,
+                       img_size: tuple,
+                       plate_size: tuple,
+                       paste_point: tuple,
+                       noises: list,
+                       rotation_maximums,
+                       background_path,
+                       perspective_type: int = 1,
+                       pad: tuple = (100, 100, 100, 100),
+                       random_scale=0.5):
     """
     This function applies perspective to the image with the given path
 
     Keyword arguments:
-    pathToImage -- path to the image file in png format (string)
-    perspectiveType -- type of perspective (integer between 1 to 6), others mean no perspective
-            would be applied
+    perspectiveType -- type of perspective (integer between 1 to 6), others mean no perspective would be applied,
+    img_size -- size of whole image,
+    rotation_maximums -- maximum degrees of rotation in perspective task,
+    plate_size -- plate's size in the image,
+    attach_point -- where the plate pastes to image,
+    mask_state -- grayscale or colorful
     pad -- padding for the image (top,bottom,left,right)
+    random_scale -- scale rate of image,
+    background_path -- the address of image's background,
 
-    returns -- a tuple: (altered image with perspective good for bounding box extraction, original image that
-                            with paddings and same perspective)
+    returns -- a tuple: (altered image with perspective good for bounding box extraction, altered mask, bounding boxed
+                            of characters, bounding box of plate)
     """
 
-    # if not pathToImage.endswith('.png'):
-    #     raise Exception('Only png files are supported.')
     if type(pad) != tuple or len(pad) != 4:
         raise Exception('pad argument must be a tuple of size 4 with integers inside')
 
-    # img = cv2.imread(pathToImage)
-    img = np.array(img)[:, :, :-1][:, :, ::-1]
-    mask = np.array(mask)[:, :, :-1][:, :, ::-1]
+    img = np.array(img)
+    mask = np.array(mask)
 
-    merged_boxes, _ = get_bounding_boxes(mask)
+    plate_box = [0, 0, img.shape[1], img.shape[0]]
+    glyph_boxes, _ = get_bounding_boxes(mask)
+    combined_boxed = glyph_boxes + [plate_box]
 
     before_altering = img.copy()
 
     # Apply noises
-    for noise in noises:
-        before_altering = noise.apply(before_altering)
+    # for noise in noises:
+    #     before_altering = noise.apply(before_altering)
 
-    before_altering, mask, merged_boxes = set_background(before_altering, mask, merged_boxes, img_size[0], img_size[1])
+    before_altering, mask, combined_boxed = set_background(before_altering, mask, combined_boxed,
+                                                           background_size=img_size,
+                                                           paste_point=paste_point,
+                                                           min_random_scale=random_scale,
+                                                           background_path=background_path)
+
+    glyph_boxes = np.array(combined_boxed[:-1])
+    plate_box = combined_boxed[-1]
 
     height, width = before_altering.shape[:2]
     mask = cv2.copyMakeBorder(mask, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT, value=(255, 255, 255))
     before_altering = cv2.copyMakeBorder(before_altering, pad[0], pad[1], pad[2], pad[3], cv2.BORDER_CONSTANT)
-    merged_boxes[:, 0] = merged_boxes[:, 0] + pad[2]
-    merged_boxes[:, 1] = merged_boxes[:, 1] + pad[0]
+    plate_box[0] = plate_box[0] + pad[2]
+    plate_box[1] = plate_box[1] + pad[0]
+    glyph_boxes[:, 0] = glyph_boxes[:, 0] + pad[2]
+    glyph_boxes[:, 1] = glyph_boxes[:, 1] + pad[0]
 
-    matrix = get_perspective_matrix(width, height, perspective_type, pad=(0, 0, 0, 0))
+    matrix = get_perspective_matrix(width, height, perspective_type, max_thetas=rotation_maximums)
     newHeight, newWidth = mask.shape[:2]
 
     imgOutput = mask.copy()
@@ -274,17 +243,31 @@ def create_perspective(img, mask, img_size: tuple, noises: list, perspective_typ
                                           cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT,
                                           borderValue=(0, 0, 0))
 
-    up_left_boxes = np.array([after_transform([x, y], matrix) for (x, y, w, h) in merged_boxes]).T
-    down_right_boxes = np.array([after_transform([x + w, y + h], matrix) for (x, y, w, h) in merged_boxes]).T
-    up_right_boxes = np.array([after_transform([x + w, y], matrix) for (x, y, w, h) in merged_boxes]).T
-    down_left_boxes = np.array([after_transform([x, y + h], matrix) for (x, y, w, h) in merged_boxes]).T
+    new_plate_box = apply_transform(matrix, [plate_box])
+    new_glyph_boxes = apply_transform(matrix, glyph_boxes)
 
-    boxes = []
+    return before_altering, imgOutput, new_glyph_boxes, new_plate_box[0]
+
+
+def after_transform(p, matrix):
+    px = (matrix[0][0] * p[0] + matrix[0][1] * p[1] + matrix[0][2]) / (
+        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
+    py = (matrix[1][0] * p[0] + matrix[1][1] * p[1] + matrix[1][2]) / (
+        (matrix[2][0] * p[0] + matrix[2][1] * p[1] + matrix[2][2]))
+    return [int(px), int(py), 1]
+
+
+def apply_transform(matrix, boxes):
+    up_left_boxes = np.array([after_transform([x, y], matrix) for (x, y, w, h) in boxes]).T
+    down_right_boxes = np.array([after_transform([x + w, y + h], matrix) for (x, y, w, h) in boxes]).T
+    up_right_boxes = np.array([after_transform([x + w, y], matrix) for (x, y, w, h) in boxes]).T
+    down_left_boxes = np.array([after_transform([x, y + h], matrix) for (x, y, w, h) in boxes]).T
+
+    new_boxes = []
     for (ul, dr, ur, dl) in zip(up_left_boxes.T, down_right_boxes.T, up_right_boxes.T, down_left_boxes.T):
         x = int(np.min([ul[0], dr[0], ur[0], dl[0]]))
         y = int(np.min([ul[1], dr[1], ur[1], dl[1]]))
         w = int(np.max([ul[0], dr[0], ur[0], dl[0]]) - np.min([ul[0], dr[0], ur[0], dl[0]]))
         h = int(np.max([ul[1], dr[1], ur[1], dl[1]]) - np.min([ul[1], dr[1], ur[1], dl[1]]))
-        boxes.append((x, y, w, h))
-
-    return (before_altering, imgOutput, boxes)
+        new_boxes.append((x, y, w, h))
+    return new_boxes

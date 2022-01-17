@@ -10,24 +10,38 @@ package_directory = os.path.dirname(os.path.abspath(__file__))
 parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
 
 
-def get_new_plate(img_size, mask_state='grayscale'):
+def get_new_plate(img_size,
+                  rotation_maximums,
+                  plate_size=(312, 70),
+                  paste_point=(0, 0),
+                  mask_state='grayscale',
+                  pad: tuple = (50, 50, 50, 50),
+                  random_scale=0.5,
+                  background_path="r"):
     """
+        img_size: size of whole image,
+        rotation_maximums: maximum degrees of rotation in perspective task,
+        plate_size: plate's size in the image,
+        attach_point: where the plate pastes to image,
         mask_state: grayscale or colorful
+        pad: padding for the image (top,bottom,left,right),
+        random_scale: scale rate of image,
+        background_path: the address of image's background
     """
     plate = get_new_plate_number()
 
     # Create a blank image with size of templates
-    # and add the background and glyph images
+    # and add the template and glyph images
     new_plate = Image.new('RGBA', (600, 132), (0, 0, 0, 0))
     mask = new_plate.copy()
 
-    # Get the background associated with the letter plate[2]
-    background = get_template(plate)
+    # Get the template associated with the letter plate[2]
+    template = get_template(plate)
 
-    # Merge the plate with the background
-    new_plate.paste(background, (0, 0))
-    white_background = Image.open(parent_path + "files/templates/white.png").convert("RGBA")
-    mask.paste(white_background, (0, 0))
+    # Merge the plate with the template
+    new_plate.paste(template, (0, 0))
+    white_template = Image.open(parent_path + "files/templates/white.png").convert("RGBA")
+    mask.paste(white_template, (0, 0))
 
     # Get the glyphs of plate
     glyph_images, glyph_images_mask = apply_glyphs(plate, mask_state)
@@ -36,11 +50,11 @@ def get_new_plate(img_size, mask_state='grayscale'):
     new_plate = adjust_glyphs(glyph_images, new_plate)
     mask = adjust_glyphs(glyph_images_mask, mask)
 
-    _newPlate = new_plate.resize((312, 70), Image.ANTIALIAS)
-    mask = mask.resize((312, 70), Image.ANTIALIAS)
+    new_plate_2 = new_plate.resize(plate_size, Image.ANTIALIAS)
+    mask = mask.resize(plate_size, Image.ANTIALIAS)
 
     # Add noise to plate
-    noise_set1, noise_set2, noise_set3 = create_noise_palettes()
+    noise_set1, noise_set2, noise_set3 = create_noise_palettes(plate_size)
     r = random.randint(0, 3)
     noises = []
     if r == 1:
@@ -56,8 +70,16 @@ def get_new_plate(img_size, mask_state='grayscale'):
             noises = [random.choice(noise_set1), random.choice(noise_set2), random.choice(noise_set3)]
 
     # Make the plate perspective
-    perspective_plate, mask, bounding_boxes = create_perspective(_newPlate, mask, img_size=img_size, noises=noises,
-                                                                 perspective_type=np.random.random_integers(0, 5),
-                                                                 pad=(50, 50, 50, 50))
+    perspective_plate, mask, bounding_boxes, plate_box = create_perspective(new_plate_2, mask,
+                                                                            img_size=img_size,
+                                                                            plate_size=plate_size,
+                                                                            paste_point=paste_point,
+                                                                            noises=noises,
+                                                                            perspective_type=np.random.random_integers(
+                                                                                0, 5),
+                                                                            rotation_maximums=rotation_maximums,
+                                                                            pad=pad,
+                                                                            random_scale=random_scale,
+                                                                            background_path=background_path)
 
-    return plate, perspective_plate, mask, bounding_boxes
+    return plate, perspective_plate, mask, bounding_boxes, plate_box

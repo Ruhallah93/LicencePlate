@@ -36,6 +36,8 @@ class CircularLightNoise(Noise):
         height, width, _ = yuv_img.shape
         noise = np.zeros((height, width))
 
+        if self.r_circle * 2 < width or self.r_circle * 2 < height:
+            self.r_circle = int(min(width, height) / 2) - 1
         # Create noise
         for i in range(self.n_circle):
             x = np.random.randint(0, width - self.r_circle * 2)

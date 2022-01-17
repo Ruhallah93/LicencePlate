@@ -11,13 +11,14 @@ from .noise.LightNoise import LightNoise
 from .noise.SPNoise import SPNoise
 import PIL.ImageOps
 import numpy as np
+from imgaug import augmenters as iaa
+from imgaug.augmentables.batches import UnnormalizedBatch
+import glob
+import uuid
 
 separetor = os.sep
 package_directory = os.path.dirname(os.path.abspath(__file__))
 parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
-
-# Def license plate size, License plate shape: (312, 70)
-lp_size = (312, 70)
 
 # Characters of Letters and Numbers in Plates
 numbers = [str(i) for i in range(0, 10)]
@@ -125,23 +126,22 @@ def adjust_glyphs(glyph_images, plate):
     return plate
 
 
-def create_noise_palettes():
-    image_noise1 = ImageNoise(parent_path + 'files/noises/noise1.png')
-    image_noise2 = ImageNoise(parent_path + 'files/noises/noise2.png')
-    image_noise3 = ImageNoise(parent_path + 'files/noises/noise3.png')
-    image_noise4 = ImageNoise(parent_path + 'files/noises/noise4.png')
-    image_noise5 = ImageNoise(parent_path + 'files/noises/noise5.png')
-    image_noise6 = ImageNoise(parent_path + 'files/noises/noise6.png')
-    image_noise9 = ImageNoise(parent_path + 'files/noises/noise9.png')
+def create_noise_palettes(img_shape):
+    image_noise1 = ImageNoise(parent_path + 'files/noises/noise1.png', plate_size=img_shape)
+    image_noise2 = ImageNoise(parent_path + 'files/noises/noise2.png', plate_size=img_shape)
+    image_noise3 = ImageNoise(parent_path + 'files/noises/noise3.png', plate_size=img_shape)
+    image_noise4 = ImageNoise(parent_path + 'files/noises/noise4.png', plate_size=img_shape)
+    image_noise5 = ImageNoise(parent_path + 'files/noises/noise5.png', plate_size=img_shape)
+    image_noise6 = ImageNoise(parent_path + 'files/noises/noise6.png', plate_size=img_shape)
+    image_noise9 = ImageNoise(parent_path + 'files/noises/noise9.png', plate_size=img_shape)
     noise_set1 = [image_noise1, image_noise2, image_noise3, image_noise4, image_noise5, image_noise6, image_noise9]
 
-    image_noise7 = ImageNoise(parent_path + 'files/noises/noise7.png')
-    image_noise8 = ImageNoise(parent_path + 'files/noises/noise8.png')
-    image_noise10 = ImageNoise(parent_path + 'files/noises/noise10.png')
+    image_noise7 = ImageNoise(parent_path + 'files/noises/noise7.png', plate_size=img_shape)
+    image_noise8 = ImageNoise(parent_path + 'files/noises/noise8.png', plate_size=img_shape)
+    image_noise10 = ImageNoise(parent_path + 'files/noises/noise10.png', plate_size=img_shape)
 
     ##################################
     # Generate randoms
-    img_shape = lp_size
     blur_kernel_size = random.choice(np.arange(3, 8, 2))
     blur_sigma = random.randint(3, 8)
     light_param = random.randint(-170, 170)
@@ -187,70 +187,107 @@ def create_noise_palettes():
 
 
 # Set background for license plate
-def set_background(img, mask, merged_boxes, width, height, random_scale=0.5, scale_ratio=True, background=-1,
-                   position=-1):
+def set_background(img, mask, merged_boxes,
+                   background_size,
+                   paste_point: tuple = (0, 0),
+                   min_random_scale=0.5,
+                   background_path="r"):
     """
     img: plate image
     width, height: width & height of background, if width == -1: make a random number for width
     and if width < def license plate size: width = lp_size[0]
     random_scale: =0, dont scale img. !=0, resize img with random scale between img.dim -+ img.dim * random_scale
-    scale_ratio: True= remain license ratio
-    background: background image, if pass this argument -1, set a random static color for background
+    background_path: background path image, if pass this argument r, set a random static color for background
     position: position of license plate in the background, if pass -1 generate a random position
     """
-    # Random background size
-    if width == -1:
-        width = random.randint(lp_size[0], 600)
-    if height == -1:
-        height = random.randint(lp_size[1], 400)
-
-    # Exception handling
-    if width < lp_size[0]:
-        width = lp_size[0]
-    if height < lp_size[1]:
-        height = lp_size[1]
 
     new_merged_boxes = np.array(merged_boxes)
 
-    # cv2.imshow('d', img)
-    # Resize plate
-    if random_scale != 0:
-        # Make (random) scale and then set new_width and new_height
-        if scale_ratio:
-            my_random_scale = (random.random() * (1 + random_scale - (1 - random_scale))) + 1 - random_scale
-            new_width = int(img.shape[1] * my_random_scale)
-            new_height = int(img.shape[0] * my_random_scale)
-        else:
-            new_width = random.randint(int(img.shape[1] - img.shape[1] * random_scale),
-                                       int(img.shape[1] + img.shape[1] * random_scale))
-            new_height = random.randint(int(img.shape[0] - img.shape[0] * random_scale),
-                                        int(img.shape[0] + img.shape[0] * random_scale))
-
-        # Check license plate is not bigger than background
-        if new_height < height and new_width < width:
-            # print("shod")
-            new_merged_boxes[:, 0] = (new_merged_boxes[:, 0] / img.shape[1]) * new_width
-            new_merged_boxes[:, 1] = (new_merged_boxes[:, 1] / img.shape[0]) * new_height
-            new_merged_boxes[:, 2] = (new_merged_boxes[:, 2] / img.shape[1]) * new_width
-            new_merged_boxes[:, 3] = (new_merged_boxes[:, 3] / img.shape[0]) * new_height
-            img = cv2.resize(img, (new_width, new_height))
-            mask = cv2.resize(mask, (new_width, new_height))
-
     # Add background to plate
-    if background == -1:
+    if background_path == "r":
         r, g, b = random.randint(0, 256), random.randint(0, 256), random.randint(0, 256)
-        background = np.array(Image.new('RGB', (width, height), (r, g, b)))
-        mask_background = np.array(Image.new('RGB', (width, height), (255, 255, 255)))
+        background = Image.new('RGBA', background_size, (r, g, b))
+    else:
+        background = Image.open(background_path).convert("RGBA").resize(background_size)
+    mask_background = Image.new('RGBA', background_size, (255, 255, 255, 255))
 
-    # Change position of plate in background
-    if position == -1:
-        x_position = random.randint(0, width - img.shape[1])
-        y_position = random.randint(0, height - img.shape[0])
-        position = (x_position, y_position)
-        background[y_position:y_position + img.shape[0], x_position:x_position + img.shape[1]] = img
-        mask_background[y_position:y_position + img.shape[0], x_position:x_position + img.shape[1]] = mask
-        new_merged_boxes[:, 0] = x_position + new_merged_boxes[:, 0]
-        new_merged_boxes[:, 1] = y_position + new_merged_boxes[:, 1]
-    # cv2.imshow('sd', background)
-    # cv2.waitKey(0)
-    return background, mask_background, new_merged_boxes
+    y = paste_point[0]
+    x = paste_point[1]
+
+    background.paste(Image.fromarray(img), (x, y))
+    mask_background.paste(Image.fromarray(mask), (x, y))
+
+    new_merged_boxes[:, 0] = x + new_merged_boxes[:, 0]
+    new_merged_boxes[:, 1] = y + new_merged_boxes[:, 1]
+
+    # Resize plate
+    if min_random_scale != 0:
+        # Make (random) scale and then set new_width and new_height
+        random_scale = random.uniform(min_random_scale, 1)
+        new_height = int(background_size[0] * random_scale)
+        new_width = int(background_size[1] * random_scale)
+        background = background.resize((new_height, new_width), Image.ANTIALIAS)
+        mask_background = mask_background.resize((new_height, new_width), Image.ANTIALIAS)
+
+        new_merged_boxes[:, 0] = (new_merged_boxes[:, 0] / background_size[1]) * new_width
+        new_merged_boxes[:, 1] = (new_merged_boxes[:, 1] / background_size[0]) * new_height
+        new_merged_boxes[:, 2] = (new_merged_boxes[:, 2] / background_size[1]) * new_width
+        new_merged_boxes[:, 3] = (new_merged_boxes[:, 3] / background_size[0]) * new_height
+
+    background = np.array(background)
+
+    # for box in new_merged_boxes:
+    #     x, y, w, h = box
+    #     cv2.rectangle(background, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    # visual = cv2.cvtColor(background, cv2.COLOR_BGRA2RGB)
+    # visual = Image.fromarray(visual)
+    # visual = np.array(visual)
+    # cv2.imshow('background', visual)
+    # cv2.imshow('mask_background', np.array(mask_background))
+    # cv2.waitKey()
+
+    return np.array(background), np.array(mask_background), new_merged_boxes
+
+
+def crop(img, mask, plate_box, glyph_boxes):
+    nx, ny, nw, nh = plate_box
+    img = img[ny:ny + nh, nx:nx + nw]
+    mask = mask[ny:ny + nh, nx:nx + nw]
+    new_glyph_boxes = []
+    for x, y, w, h in glyph_boxes:
+        new_glyph_boxes.append((x - nx, y - ny, w, h))
+    return img, mask, (plate_box[0] - nx, plate_box[1] - ny, plate_box[2], plate_box[3]), new_glyph_boxes
+
+
+def augmentation(from_directory, to_directory, nb_batches=5):
+    if not os.path.exists(parent_path + to_directory):
+        os.makedirs(parent_path + to_directory)
+
+    images = []
+
+    types = ('*.png', '*.jpg', '*.jpeg')
+    for type_ in types:
+        for filename in glob.glob(parent_path + from_directory + '/' + type_):
+            im = Image.open(filename)
+            images.append(np.array(im))
+
+    batches = [UnnormalizedBatch(images=images) for _ in range(nb_batches)]
+
+    aug = iaa.Sometimes(0.5, [
+        # iaa.PiecewiseAffine(scale=0.05, nb_cols=3, nb_rows=3),  # very slow
+        iaa.Fliplr(0.5),  # very fast
+        iaa.CropAndPad(px=(-20, 20)),  # very fast
+        iaa.ChannelShuffle(0.35, channels=[0, 1, 2]),
+        iaa.AdditiveGaussianNoise(scale=0.01 * 255),
+        iaa.WithChannels([0, 1, 2], iaa.Add((10, 100))),
+        iaa.RemoveCBAsByOutOfImageFraction(0.3),
+        iaa.Sharpen(alpha=0.4),
+        iaa.AveragePooling(2)
+    ])
+
+    batches_aug = list(aug.augment_batches(batches, background=True))  # background=True for multicore aug
+
+    for i in batches_aug:
+        for j in i.images_aug:
+            _id = uuid.uuid4().__str__()
+            Image.fromarray(j).save(parent_path + to_directory + _id + ".png", format="png")
