@@ -41,7 +41,7 @@ Or:
 python3 DataMaker.py --size 5000 --workers 10 --img_size 500 400 --save_plate --save_mask --mask_state "colorful" --crop_to_content --cars files/cars --address "output/unet/test"
 ```
 
-<h1>How to use DataMaker for Extracting glyphs</h1>
+<h1>How to use DataMaker for extracting glyphs</h1>
 <h3>Example</h3>
 <p>
   <img src="generated_examples/glyph1.png" width="100">
@@ -56,7 +56,7 @@ In order to generate glyphs:
 python3 DataMaker.py --size 5000 --workers 10 --img_size 500 400 --save_bounding_boxes --save_glyphs --glyph_size 80 80 --mask_state "grayscale" --address "output/yolo/train"
 ```
 
-<h1>How to use StreetMaker for Generate Plate Recognition Dataset</h1>
+<h1>How to use StreetMaker for generating plate recognition dataset</h1>
 <h3>Example</h3>
 <p>
   <img src="generated_examples/street1.png" width="200">
@@ -69,7 +69,7 @@ In order to generate streets:
 python3 StreetMaker.py --size 10000 --workers 10 --img_size 1000 600 --grid_size 3 3 --backgrounds files/streets --cars files/cars --address "output/unet/train"
 ```
 
-<h1>How to Augment Datasets</h1>
+<h1>How to augment datasets</h1>
 <h3>Example</h3>
 
 In order to augment streets:
