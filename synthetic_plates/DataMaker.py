@@ -6,7 +6,7 @@ import cv2
 import random
 from PIL import Image
 import os
-from utils.Utils import letter_to_class
+from utils.Utils import letter_to_class, visualization
 from utils.Utils import letters
 from utils.Utils import crop
 from datetime import datetime
@@ -89,22 +89,16 @@ def generate_and_save_plates(store_address, cars,
         perspective_plate, mask = adjust_plate_and_mask_size(perspective_plate, mask, img_size)
 
         # Numpy array to PIL
-        perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_BGRA2RGB)
+        perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_RGBA2BGR)
         perspective_plate = Image.fromarray(perspective_plate)
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGRA2RGB)
+        mask = cv2.cvtColor(mask, cv2.COLOR_RGBA2BGR)
         mask = Image.fromarray(mask)
 
         if save_bounding_boxes:
             if len(bonding_boxes) != 8:
                 counter += 1
                 print("len(merged_boxes): ", len(bonding_boxes))
-                visual = np.array(perspective_plate)
-                for box in bonding_boxes + [plate_box]:
-                    x, y, w, h = box
-                    cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                cv2.imshow('perspective_plate', visual)
-                cv2.imshow('mask', np.array(mask))
-                cv2.waitKey(500)
+                visualization(perspective_plate, [mask], boxes=bonding_boxes + [plate_box], waitKey=500)
                 continue
 
             # Save Glyphs
@@ -112,10 +106,7 @@ def generate_and_save_plates(store_address, cars,
                 save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size)
 
         # Visualization
-        # visual = np.array(perspective_plate)
-        # cv2.imshow('perspective_plate', visual)
-        # cv2.imshow('mask', np.array(mask))
-        # cv2.waitKey(500)
+        # visualization(perspective_plate, [mask], waitKey=500)
 
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
@@ -162,11 +153,10 @@ if __name__ == '__main__':
 
     # opt.save_plate = True
     # opt.save_mask = True
-    # opt.save_bounding_boxes = False
+    # opt.save_bounding_boxes = True
     # opt.save_glyphs = True
     # opt.crop_to_content = True
-    # opt.cars_augmentation = False
-    # opt.mask_state = "colorful"
+    # opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address

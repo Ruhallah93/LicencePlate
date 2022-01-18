@@ -236,15 +236,7 @@ def set_background(img, mask, merged_boxes,
 
     background = np.array(background)
 
-    # for box in new_merged_boxes:
-    #     x, y, w, h = box
-    #     cv2.rectangle(background, (x, y), (x + w, y + h), (0, 255, 0), 1)
-    # visual = cv2.cvtColor(background, cv2.COLOR_BGRA2RGB)
-    # visual = Image.fromarray(visual)
-    # visual = np.array(visual)
-    # cv2.imshow('background', visual)
-    # cv2.imshow('mask_background', np.array(mask_background))
-    # cv2.waitKey()
+    # visualization(background, [mask_background], boxes=new_merged_boxes)
 
     return np.array(background), np.array(mask_background), new_merged_boxes
 
@@ -291,3 +283,26 @@ def augmentation(from_directory, to_directory, nb_batches=5):
         for j in i.images_aug:
             _id = uuid.uuid4().__str__()
             Image.fromarray(j).save(parent_path + to_directory + _id + ".png", format="png")
+
+
+def rgba_2_bgr(img):
+    if isinstance(img, PIL.Image.Image):
+        img = np.array(img)
+    if img.shape[2] == 4:
+        street = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+        return np.array(Image.fromarray(street))
+    else:
+        return np.array(img)
+
+
+def visualization(main_image, images=None, boxes=None, waitKey=0):
+    main_image = rgba_2_bgr(main_image)
+    if boxes is not None:
+        for box in boxes:
+            x, y, w, h = box
+            cv2.rectangle(main_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    cv2.imshow('main', main_image)
+    if images is not None:
+        for i, img in enumerate(images):
+            cv2.imshow(str(i), rgba_2_bgr(img))
+    cv2.waitKey(waitKey)

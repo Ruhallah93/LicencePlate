@@ -7,14 +7,15 @@ from PIL import Image
 import os
 from datetime import datetime
 from utils.Creator import get_new_plate
-from utils.Utils import letter_to_class
+from utils.Utils import letter_to_class, visualization
+from utils.Utils import rgba_2_bgr
 import time
 import numpy as np
 
 
 def save_whole_plate_boxes_(store_address, street, whole_plate_boxes, _id):
     label_file = open("{}.txt".format(store_address + _id + "txt"), 'w')
-    height, width = street.height, street.width
+    height, width = street.shape[0], street.shape[1]
     classes = [0]
     for box in sorted(whole_plate_boxes, key=lambda x: x[0]):
         x, y, w, h = box
@@ -27,10 +28,7 @@ def save_whole_plate_boxes_(store_address, street, whole_plate_boxes, _id):
 def save_plate_bounding_boxes_(store_directory, plate, perspective_plate, bonding_boxes, name):
     if not os.path.exists(store_directory):
         os.makedirs(store_directory)
-    # perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_RGBA2BGR)
-    # perspective_plate = Image.fromarray(perspective_plate)
     label_file = open("{}.txt".format(store_directory + name), 'w')
-    # height, width = perspective_plate.height, perspective_plate.width
     height, width = perspective_plate.shape[0], perspective_plate.shape[1]
     classes = [plate[0], plate[1], letter_to_class[plate[2]], plate[3], plate[4], plate[5], plate[6], plate[7]]
     for i, box in enumerate(sorted(bonding_boxes, key=lambda x: x[0])):
@@ -123,23 +121,14 @@ def generate_and_save_streets(store_address, backgrounds, cars,
             # Goto next row
             y += h
 
-        # Numpy array to PIL
-        street = cv2.cvtColor(street, cv2.COLOR_RGBA2BGR)
-        street = Image.fromarray(street)
-
         # Visualization
-        # visual = np.array(street)
-        # for box in whole_plate_boxes:
-        #     x, y, w, h = box
-        #     cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 1)
-        # cv2.imshow('street', visual)
-        # cv2.waitKey(500)
+        # visualization(street, boxes=whole_plate_boxes, waitKey=1000)
 
-        cv2.imshow("test", np.array(street))
-        cv2.waitKey()
+        # RGBA 2 BGR
+        street = rgba_2_bgr(street)
 
         # Save street
-        cv2.imwrite(store_address + street_id + ".png", np.array(street))
+        cv2.imwrite(store_address + street_id + ".png", street)
 
         # Save bounding boxes
         save_whole_plate_boxes_(store_address, street, whole_plate_boxes, street_id)
@@ -149,7 +138,7 @@ if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 600], help='size of background')
     parser.add_argument('--grid_size', nargs='+', type=int, default=[3, 3], help='# rows, # cell in last row')
     parser.add_argument('--address', type=str, default='output/streets', help='The address of saving dataset')
