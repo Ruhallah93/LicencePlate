@@ -1,9 +1,11 @@
 <h1>How to use DataMaker for YOLO</h1>
 <h3>Example</h3>
-<img src="generated_examples/yolo1.png" width="200">
-<img src="generated_examples/yolo2.png" width="200"><br/>
-<img src="generated_examples/yolo-crp1.png" width="200">
-<img src="generated_examples/yolo-crp2.png" width="200"><br/>
+<p>
+  <img src="generated_examples/yolo1.png" width="200">
+  <img src="generated_examples/yolo2.png" width="200"><br/>
+  <img src="generated_examples/yolo-crp1.png" width="200">
+  <img src="generated_examples/yolo-crp2.png" width="200"><br/>
+</p>
 
 In order to generate 20000 data using 10 threads for yolo, run this command:
 
@@ -21,10 +23,12 @@ python3 DataMaker.py --size 20000 --workers 10 --img_size 500 400 --save_plate -
 
 <h1>How to use DataMaker for UNET, CycleGAN, ...</h1>
 <h3>Example</h3>
-<img src="generated_examples/seg-cfl.png" width="200">
-<img src="generated_examples/seg-clr-m.png" width="200"><br/>
-<img src="generated_examples/seg-gry.png" width="200">
-<img src="generated_examples/seg-gry-m.png" width="200"><br/>
+<p>
+  <img src="generated_examples/seg-cfl.png" width="200">
+  <img src="generated_examples/seg-clr-m.png" width="200"><br/>
+  <img src="generated_examples/seg-gry.png" width="200">
+  <img src="generated_examples/seg-gry-m.png" width="200"><br/>
+</p>
 In order to generate 5000 data using 10 threads for unet, run this command:
 
 ```
@@ -39,11 +43,12 @@ python3 DataMaker.py --size 5000 --workers 10 --img_size 500 400 --save_plate --
 
 <h1>How to use DataMaker for Extracting glyphs</h1>
 <h3>Example</h3>
-
-<img src="generated_examples/glyph1.png" width="100">
-<img src="generated_examples/glyph2.png" width="100">
-<img src="generated_examples/glyph3.png" width="100">
-<img src="generated_examples/glyph4.png" width="100"><br/>
+<p>
+  <img src="generated_examples/glyph1.png" width="100">
+  <img src="generated_examples/glyph2.png" width="100">
+  <img src="generated_examples/glyph3.png" width="100">
+  <img src="generated_examples/glyph4.png" width="100"><br/>
+</p>
 
 In order to generate glyphs:
 
@@ -53,9 +58,10 @@ python3 DataMaker.py --size 5000 --workers 10 --img_size 500 400 --save_bounding
 
 <h1>How to use StreetMaker for Generate Plate Recognition Dataset</h1>
 <h3>Example</h3>
-
-<img src="generated_examples/street1.png" width="200">
-<img src="generated_examples/street2.png" width="200"><br/>
+<p>
+  <img src="generated_examples/street1.png" width="200">
+  <img src="generated_examples/street2.png" width="200"><br/>
+</p>
 
 In order to generate streets:
 
