@@ -122,7 +122,7 @@ def generate_and_save_streets(store_address, backgrounds, cars,
             y += h
 
         # Visualization
-        # visualization(street, boxes=whole_plate_boxes, waitKey=1000)
+        # visualization(street, boxes=whole_plate_boxes, waitKey=0)
 
         # RGBA 2 BGR
         street = rgba_2_bgr(street)
