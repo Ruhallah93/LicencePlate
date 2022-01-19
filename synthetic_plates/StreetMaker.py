@@ -138,7 +138,7 @@ if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 600], help='size of background')
     parser.add_argument('--grid_size', nargs='+', type=int, default=[3, 3], help='# rows, # cell in last row')
     parser.add_argument('--address', type=str, default='output/streets', help='The address of saving dataset')

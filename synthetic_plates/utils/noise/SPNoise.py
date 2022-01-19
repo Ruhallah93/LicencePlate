@@ -1,5 +1,7 @@
 from .Noise import Noise
 import numpy as np
+import cv2
+# import matplotlib.pyplot as plt
 
 
 class SPNoise(Noise):
@@ -14,6 +16,7 @@ class SPNoise(Noise):
     def apply(self, img):
         # cv2.imshow("s", img)
 
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
         out = np.copy(img)
 
         # Salt mode
@@ -34,6 +37,11 @@ class SPNoise(Noise):
             out[coords[0], coords[1], :] = self.pepper_color
         else:
             out[coords[0], coords[1], coords[2]] = self.pepper_color
+
+        out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
+
+        # plt.imshow(out)
+        # plt.show()
 
         # cv2.imshow('end', out)
         # cv2.waitKey()

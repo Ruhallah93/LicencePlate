@@ -46,7 +46,7 @@ class NegativeNoise(Noise):
         yuv_img[:, :, 0] = y_noise
 
         # Remove, just for test
-        # cv2.imshow("d", img_noise)
+        # cv2.imshow("d", self.YUV2RGBA(yuv_img))
         # cv2.waitKey()
 
         return self.YUV2RGBA(yuv_img)
