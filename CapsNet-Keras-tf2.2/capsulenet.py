@@ -128,6 +128,19 @@ def train(model,  # type: models.Model
             x_batch, y_batch = generator.next()
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
+    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+        train_directory,
+        labels="inferred",
+        label_mode="int",
+        color_mode="rgb",
+        batch_size=32,
+        image_size=image_size,
+        shuffle=True,
+        seed=1337,
+        validation_split=0.2,
+        subset="validation",
+    )
+
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
         valid_directory,
         labels="inferred",
@@ -142,12 +155,13 @@ def train(model,  # type: models.Model
     )
 
     # Training with data augmentation. If shift_fraction=0., no augmentation.
-    model.fit(train_generator(train_directory, args.batch_size, args.shift_fraction),
-              # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
-              epochs=args.epochs,
-              validation_data=val_ds,
-              batch_size=args.batch_size,
-              callbacks=[log, checkpoint, lr_decay])
+    # train_generator(train_directory, args.batch_size, args.shift_fraction)
+    model.fit_generator(train_ds,
+                        # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
+                        epochs=args.epochs,
+                        validation_data=val_ds,
+                        batch_size=args.batch_size,
+                        callbacks=[log, checkpoint, lr_decay])
     # End: Training with data augmentation -----------------------------------------------------------------------#
 
     model.save_weights(args.save_dir + '/trained_model.h5')
