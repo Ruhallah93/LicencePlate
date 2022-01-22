@@ -49,6 +49,7 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
         glyph = resize(glyph, glyph_size)
         w_background = Image.new('RGB', glyph_size, (255, 255, 255))
         w_background.paste(glyph, (0, 0))
+        w_background = w_background.convert("L")
         _id = uuid.uuid4().__str__()
         cv2.imwrite(store_directory + char + os.sep + _id + ".png", np.array(w_background))
 
@@ -150,7 +151,7 @@ def generate_and_save_plates(store_address, cars,
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=10, help='number of plates to generate')
+    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[500, 400], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')

@@ -24,8 +24,16 @@ import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
 from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
+import os
 
 K.set_image_data_format('channels_last')
+
+
+def count_files(address):
+    total = 0
+    for root, dirs, files in os.walk(address):
+        total += len(files)
+    return total
 
 
 def CapsNet(input_shape, n_class, routings, batch_size):
@@ -123,14 +131,14 @@ def train(model,  # type: models.Model
     def train_generator(directory, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
                                            height_shift_range=shift_fraction)
-        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size)
+        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
         while 1:
             x_batch, y_batch = generator.next()
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
     def valid_generator(directory, batch_size):
         train_datagen = ImageDataGenerator()
-        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size)
+        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
         while 1:
             x_batch, y_batch = generator.next()
             yield ([x_batch, y_batch], [y_batch, x_batch])
@@ -138,9 +146,10 @@ def train(model,  # type: models.Model
     # Training with data augmentation. If shift_fraction=0., no augmentation.
     # train_generator(train_directory, args.batch_size, args.shift_fraction)
     model.fit(train_generator(train_directory, args.batch_size, args.shift_fraction),
-              # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
+              steps_per_epoch=int(count_files(train_directory) / args.batch_size),
               epochs=args.epochs,
               validation_data=valid_generator(valid_directory, args.batch_size),
+              validation_steps=int(count_files(valid_directory) / args.batch_size),
               callbacks=[log, checkpoint, lr_decay])
     # End: Training with data augmentation -----------------------------------------------------------------------#
 
