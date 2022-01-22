@@ -122,45 +122,26 @@ def train(model,  # type: models.Model
     # Begin: Training with data augmentation ---------------------------------------------------------------------#
     def train_generator(directory, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
-                                           height_shift_range=shift_fraction)  # shift up to 2 pixel for MNIST
+                                           height_shift_range=shift_fraction)
         generator = train_datagen.flow_from_directory(directory, batch_size=batch_size)
         while 1:
             x_batch, y_batch = generator.next()
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        train_directory,
-        labels="inferred",
-        label_mode="int",
-        color_mode="rgb",
-        batch_size=args.batch_size,
-        image_size=image_size,
-        shuffle=True,
-        seed=1337,
-        validation_split=0.2,
-        subset="validation",
-    )
-
-    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        valid_directory,
-        labels="inferred",
-        label_mode="int",
-        color_mode="rgb",
-        batch_size=args.batch_size,
-        image_size=image_size,
-        shuffle=True,
-        seed=1337,
-        validation_split=0.2,
-        subset="validation",
-    )
+    def valid_generator(directory, batch_size):
+        train_datagen = ImageDataGenerator()
+        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size)
+        while 1:
+            x_batch, y_batch = generator.next()
+            yield ([x_batch, y_batch], [y_batch, x_batch])
 
     # Training with data augmentation. If shift_fraction=0., no augmentation.
     # train_generator(train_directory, args.batch_size, args.shift_fraction)
-    model.fit_generator(train_ds,
-                        # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
-                        epochs=args.epochs,
-                        validation_data=val_ds,
-                        callbacks=[log, checkpoint, lr_decay])
+    model.fit(train_generator(train_directory, args.batch_size, args.shift_fraction),
+              # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
+              epochs=args.epochs,
+              validation_data=valid_generator(valid_directory, args.batch_size),
+              callbacks=[log, checkpoint, lr_decay])
     # End: Training with data augmentation -----------------------------------------------------------------------#
 
     model.save_weights(args.save_dir + '/trained_model.h5')
@@ -178,7 +159,7 @@ def test(model, test_directory, image_size, args):
         labels="inferred",
         label_mode="int",
         color_mode="rgb",
-        batch_size=32,
+        batch_size=args.batch_size,
         image_size=image_size,
         shuffle=False,
         seed=1337,
