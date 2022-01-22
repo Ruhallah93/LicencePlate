@@ -6,7 +6,7 @@ import cv2
 import random
 from PIL import Image
 import os
-from utils.Utils import letter_to_class, visualization
+from utils.Utils import letter_to_class, visualization, resize
 from utils.Utils import letters
 from utils.Utils import crop
 from datetime import datetime
@@ -25,18 +25,29 @@ def adjust_plate_and_mask_size(perspective_plate, mask, img_size):
     return perspective_plate, mask
 
 
-def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size):
+def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size, save_mode="alphabet+digit"):
     store_directory = store_address + "glyphs" + os.sep if opt.save_bounding_boxes & opt.save_glyphs else store_address
     if not os.path.exists(store_directory):
         os.makedirs(store_directory)
-    for char in [str(i) for i in range(10)] + letters:
+    if save_mode == "alphabet":
+        directories = letters
+    elif save_mode == "digit":
+        directories = [str(i) for i in range(10)]
+    else:
+        directories = [str(i) for i in range(10)] + letters
+    for char in directories:
         if not os.path.exists(store_directory + char + os.sep):
             os.makedirs(store_directory + char + os.sep)
     bonding_boxes.sort()
-    for box, char in zip(bonding_boxes, plate):
+    for i, (box, char) in enumerate(zip(bonding_boxes, plate)):
+        if save_mode == "alphabet" and i != 2:
+            continue
+        elif save_mode == "digit" and i == 2:
+            continue
         x, y, w, h = box
         glyph = perspective_plate.crop((x, y, x + w, y + h))
-        w_background = Image.new('RGBA', (glyph_size[0], glyph_size[1]), (255, 255, 255, 255))
+        glyph = resize(glyph, glyph_size)
+        w_background = Image.new('RGB', glyph_size, (255, 255, 255))
         w_background.paste(glyph, (0, 0))
         _id = uuid.uuid4().__str__()
         cv2.imwrite(store_directory + char + os.sep + _id + ".png", np.array(w_background))
@@ -59,7 +70,8 @@ def generate_and_save_plates(store_address, cars,
                              dataset_size: int = 200, img_size: tuple = (600, 400),
                              save_plate=True, save_bounding_boxes=True,
                              save_mask=True, save_glyphs=True, glyph_size: tuple = (128, 128),
-                             mask_state='grayscale', crop_to_content=False):
+                             mask_state='grayscale', crop_to_content=False,
+                             save_glyph_mode="alphabet+digit"):
     random.seed(datetime.now())
 
     rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [15], 'pitch+yaw': [30, 30],
@@ -103,7 +115,8 @@ def generate_and_save_plates(store_address, cars,
 
             # Save Glyphs
             if save_glyphs:
-                save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size)
+                save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size,
+                             save_mode=save_glyph_mode)
 
         # Visualization
         # visualization(perspective_plate, [mask], waitKey=500)
@@ -137,15 +150,16 @@ def generate_and_save_plates(store_address, cars,
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=10, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[500, 400], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
     parser.add_argument('--save_mask', action='store_true', help='save the masks if true')
     parser.add_argument('--save_glyphs', action='store_true', help='save the masks if true')
     parser.add_argument('--crop_to_content', action='store_true', help='save only plate')
-    parser.add_argument('--glyph_size', nargs='+', type=int, default=[80, 80], help='size of saved glyphs')
+    parser.add_argument('--glyph_size', nargs='+', type=int, default=[32, 32], help='size of saved glyphs')
+    parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
     parser.add_argument('--address', type=str, default='output/unet2', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
@@ -153,8 +167,8 @@ if __name__ == '__main__':
 
     # opt.save_plate = True
     # opt.save_mask = True
-    # opt.save_bounding_boxes = True
-    # opt.save_glyphs = True
+    opt.save_bounding_boxes = True
+    opt.save_glyphs = True
     # opt.crop_to_content = True
     # opt.mask_state = "grayscale"
 
@@ -182,7 +196,8 @@ if __name__ == '__main__':
                                                           chunk_size, tuple(opt.img_size),
                                                           opt.save_plate, opt.save_bounding_boxes,
                                                           opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
-                                                          opt.mask_state, opt.crop_to_content))
+                                                          opt.mask_state, opt.crop_to_content,
+                                                          opt.save_glyph_mode))
         t.start()
         threadList.append(t)
         if i == 0:

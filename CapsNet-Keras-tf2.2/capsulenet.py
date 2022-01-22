@@ -272,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument('--test_address', type=str, default='synthetic_plates/output/yolo/test/glyphs',
                         help='The address of test dataset')
     parser.add_argument('--glyph_size', nargs='+', type=int, default=[80, 80, 3], help='size of saved glyphs')
-    parser.add_argument('--n_class', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--n_class', type=int, default=27, help='number of threads to run')
     args = parser.parse_args()
     print(args)
 

@@ -306,3 +306,11 @@ def visualization(main_image, images=None, boxes=None, waitKey=0):
         for i, img in enumerate(images):
             cv2.imshow(str(i), rgba_2_bgr(img))
     cv2.waitKey(waitKey)
+
+
+def resize(img, sizes):
+    if img.size[0] > sizes[0]:
+        img = img.resize((sizes[0], int(sizes[0] * img.size[1] / img.size[0])))
+    if img.size[1] > sizes[1]:
+        img = img.resize((int(sizes[1] * img.size[1] / img.size[1]), sizes[0]))
+    return img
