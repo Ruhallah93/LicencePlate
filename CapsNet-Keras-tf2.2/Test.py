@@ -7,7 +7,6 @@ train_loader = tf.keras.preprocessing.image_dataset_from_directory(
     label_mode="int",
     color_mode="rgb",
     batch_size=32,
-    image_size=(80, 80),
     shuffle=True,
     seed=1337,
     validation_split=0.2,

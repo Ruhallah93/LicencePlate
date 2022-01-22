@@ -20,7 +20,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 from tensorflow.keras import backend as K
-from tensorflow.keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from utils import combine_images
 from PIL import Image
@@ -93,7 +92,7 @@ def margin_loss(y_true, y_pred):
 
 
 def train(model,  # type: models.Model
-          train_directory, valid_directory, args):
+          train_directory, valid_directory, image_size, args):
     """
     Training a CapsuleNet
     :param model: the CapsuleNet model
@@ -135,7 +134,7 @@ def train(model,  # type: models.Model
         label_mode="int",
         color_mode="rgb",
         batch_size=32,
-        image_size=(80, 80),
+        image_size=image_size,
         shuffle=True,
         seed=1337,
         validation_split=0.2,
@@ -160,14 +159,14 @@ def train(model,  # type: models.Model
     return model
 
 
-def test(model, test_directory, args):
+def test(model, test_directory, image_size, args):
     test_ds = tf.keras.preprocessing.image_dataset_from_directory(
         test_directory,
         labels="inferred",
         label_mode="int",
         color_mode="rgb",
         batch_size=32,
-        image_size=(80, 80),
+        image_size=image_size,
         shuffle=False,
         seed=1337,
         validation_split=0.2,
@@ -187,7 +186,7 @@ def test(model, test_directory, args):
     plt.show()
 
 
-def manipulate_latent(model, test_directory, args):
+def manipulate_latent(model, test_directory, image_size, args):
     print('-' * 30 + 'Begin: manipulate' + '-' * 30)
     test_ds = tf.keras.preprocessing.image_dataset_from_directory(
         test_directory,
@@ -195,7 +194,7 @@ def manipulate_latent(model, test_directory, args):
         label_mode="int",
         color_mode="rgb",
         batch_size=512,
-        image_size=(80, 80),
+        image_size=image_size,
         shuffle=True,
         seed=1337,
         validation_split=0.2,
@@ -281,9 +280,10 @@ if __name__ == "__main__":
         train(model=model,
               train_directory=args.train_address,
               valid_directory=args.test_address,
+              image_size=args.glyph_size[:-1],
               args=args)
     else:  # as long as weights are given, will run testing
         if args.weights is None:
             print('No weights are provided. Will test using random initialized weights.')
-        manipulate_latent(manipulate_model, args.test_address, args)
-        test(model=eval_model, test_address=args.test_address, args=args)
+        manipulate_latent(manipulate_model, args.test_address, image_size=args.glyph_size[:-1], args=args)
+        test(model=eval_model, test_address=args.test_address, image_size=args.glyph_size[:-1], args=args)
