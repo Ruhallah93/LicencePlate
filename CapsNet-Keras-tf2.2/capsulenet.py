@@ -133,7 +133,7 @@ def train(model,  # type: models.Model
         labels="inferred",
         label_mode="int",
         color_mode="rgb",
-        batch_size=32,
+        batch_size=args.batch_size,
         image_size=image_size,
         shuffle=True,
         seed=1337,
@@ -146,7 +146,7 @@ def train(model,  # type: models.Model
         labels="inferred",
         label_mode="int",
         color_mode="rgb",
-        batch_size=32,
+        batch_size=args.batch_size,
         image_size=image_size,
         shuffle=True,
         seed=1337,
@@ -160,7 +160,6 @@ def train(model,  # type: models.Model
                         # steps_per_epoch=int(y_train.shape[0] / args.batch_size),
                         epochs=args.epochs,
                         validation_data=val_ds,
-                        batch_size=args.batch_size,
                         callbacks=[log, checkpoint, lr_decay])
     # End: Training with data augmentation -----------------------------------------------------------------------#
 
