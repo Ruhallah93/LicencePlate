@@ -25,7 +25,8 @@ def adjust_plate_and_mask_size(perspective_plate, mask, img_size):
     return perspective_plate, mask
 
 
-def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size, save_mode="alphabet+digit"):
+def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size,
+                 glyph_state='grayscale', save_mode="alphabet+digit"):
     store_directory = store_address + "glyphs" + os.sep if opt.save_bounding_boxes & opt.save_glyphs else store_address
     if not os.path.exists(store_directory):
         os.makedirs(store_directory)
@@ -49,9 +50,10 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
         glyph = resize(glyph, glyph_size)
         w_background = Image.new('RGB', glyph_size, (255, 255, 255))
         w_background.paste(glyph, (0, 0))
-        w_background = w_background.convert("L")
+        if glyph_state == 'grayscale':
+            w_background = w_background.convert("L")
         _id = uuid.uuid4().__str__()
-        cv2.imwrite(store_directory + char + os.sep + _id + ".jpg", np.array(w_background))
+        cv2.imwrite(store_directory + char + os.sep + _id + ".png", np.array(w_background))
 
 
 def save_bounding_boxes_(store_directory, plate, perspective_plate, bonding_boxes, name, _id):
@@ -72,7 +74,7 @@ def generate_and_save_plates(store_address, cars,
                              save_plate=True, save_bounding_boxes=True,
                              save_mask=True, save_glyphs=True, glyph_size: tuple = (128, 128),
                              mask_state='grayscale', crop_to_content=False,
-                             save_glyph_mode="alphabet+digit"):
+                             glyph_state='grayscale', save_glyph_mode='alphabet+digit'):
     random.seed(datetime.now())
 
     rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [15], 'pitch+yaw': [30, 30],
@@ -117,6 +119,7 @@ def generate_and_save_plates(store_address, cars,
             # Save Glyphs
             if save_glyphs:
                 save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size,
+                             glyph_state=glyph_state,
                              save_mode=save_glyph_mode)
 
         # Visualization
@@ -160,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_glyphs', action='store_true', help='save the masks if true')
     parser.add_argument('--crop_to_content', action='store_true', help='save only plate')
     parser.add_argument('--glyph_size', nargs='+', type=int, default=[32, 32], help='size of saved glyphs')
+    parser.add_argument('--glyph_state', type=str, default='grayscale', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
     parser.add_argument('--address', type=str, default='output/unet2', help='The address of saving dataset')
@@ -198,7 +202,7 @@ if __name__ == '__main__':
                                                           opt.save_plate, opt.save_bounding_boxes,
                                                           opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
                                                           opt.mask_state, opt.crop_to_content,
-                                                          opt.save_glyph_mode))
+                                                          opt.glyph_state, opt.save_glyph_mode))
         t.start()
         threadList.append(t)
         if i == 0:
