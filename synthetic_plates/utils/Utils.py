@@ -313,4 +313,6 @@ def resize(img, sizes):
         img = img.resize((sizes[0], int(sizes[0] * img.size[1] / img.size[0])))
     if img.size[1] > sizes[1]:
         img = img.resize((int(sizes[1] * img.size[1] / img.size[1]), sizes[0]))
-    return img
+    w_background = Image.new('RGB', sizes, (255, 255, 255))
+    w_background.paste(img, (0, 0))
+    return w_background
