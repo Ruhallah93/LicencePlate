@@ -30,7 +30,7 @@ letter_to_class = {"ALEF": 10, "BE": 11, "PE": 12, "TE": 13, "SE": 14, "JIM": 15
                    "DAL": 19, "ZAL": 20, "RE": 21, "ZE": 22, "ZHE": 23,
                    "SIN": 24, "SHIN": 25, "SAD": 26, "ZAD": 27, "TA": 28, "ZA": 29, "EIN": 30, "GHEIN": 31, "FE": 32,
                    "GHAF": 33, "KAF": 34, "GAF": 35, "LAM": 36, "MIM": 37, "NON": 38,
-                   "VAV": 39, "HE": 40, "YE": 41, "WHEEL": 42}
+                   "VAV": 39, "HE": 40, "YE": 41, "WHEEL": 42, "DPLMT": 43, "SYSI": 44, "TSHFT": 45}
 
 
 def get_new_plate_number():
