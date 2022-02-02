@@ -15,7 +15,8 @@ origin_label_to_ours = {'0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '
                         'p': 'PE', 'the': 'SE', 'ze': 'ZE', 'she': 'SHIN', 'fe': 'FE', 'kaf': 'KAF',
                         'tashrifat': 'TSHFT', 'gaf': 'GAF'}
 
-dataset_path = "/home/ruhiii/Downloads/CharFinder/data_temp/"
+dataset_path = "/home/ruhiii/Downloads/CharFinder/final_data_set/"
+dst = "/home/ruhiii/Downloads/CharFinder/final_data_set_repaired/"
 
 
 def repair(from_path, to_path):
@@ -34,6 +35,10 @@ def repair(from_path, to_path):
         key = [name for name, value in origin_id_to_ours.items() if str(value) == data[2]][0]
         data[2] = origin_label_to_ours[key]
         name_of_file = "{}_{}_{}".format(data[0] + data[1], data[2], data[3] + data[4] + data[5] + data[6] + data[7])
+    elif len(data) == 6 and data[2] == '35':
+        key = [name for name, value in origin_id_to_ours.items() if str(value) == data[2]][0]
+        data[2] = origin_label_to_ours[key]
+        name_of_file = "{}_{}_{}".format(data[0] + data[1], data[2], data[3] + data[4] + data[5])
     else:
         name_of_file = "faulty"
 
@@ -48,4 +53,4 @@ def repair(from_path, to_path):
 
 print("Start Repairing ...")
 for path in tqdm(glob.glob(dataset_path + "*.txt")):
-    repair(path, "/home/ruhiii/Downloads/CharFinder/data_temp_repaired/")
+    repair(path, dst)
