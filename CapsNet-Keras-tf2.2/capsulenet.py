@@ -18,6 +18,7 @@ Author: Xifeng Guo, E-mail: `guoxifeng1990@163.com`, Github: `https://github.com
 
 import numpy as np
 import tensorflow as tf
+from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras import layers, models, optimizers
 from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
@@ -25,8 +26,35 @@ from utils import combine_images
 from PIL import Image
 from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 import os
+import cv2
+import PIL.ImageOps
 
 K.set_image_data_format('channels_last')
+
+
+def rgba_2_bgr(img):
+    if isinstance(img, PIL.Image.Image):
+        img = np.array(img)
+    if img.shape[2] == 4:
+        street = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+        return np.array(Image.fromarray(street))
+    else:
+        return np.array(img)
+
+
+def visualization(main_image, images=None, boxes=None, waitKey=0):
+    main_image = cv2.cvtColor(np.array(main_image), cv2.COLOR_BGR2RGB)
+    main_image = Image.fromarray(main_image, mode="RGB")
+    main_image = rgba_2_bgr(main_image)
+    if boxes is not None:
+        for box in boxes:
+            x, y, w, h = box
+            cv2.rectangle(main_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    cv2.imshow('main', main_image)
+    if images is not None:
+        for i, img in enumerate(images):
+            cv2.imshow(str(i), rgba_2_bgr(img))
+    cv2.waitKey(waitKey)
 
 
 def count_files(address):
@@ -135,6 +163,7 @@ def train(model,  # type: models.Model
         generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
         while 1:
             x_batch, y_batch = generator.next()
+            x_batch /= 255
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
     def valid_generator(directory, batch_size):
@@ -142,6 +171,7 @@ def train(model,  # type: models.Model
         generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
         while 1:
             x_batch, y_batch = generator.next()
+            x_batch /= 255
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
     # Training with data augmentation. If shift_fraction=0., no augmentation.
@@ -172,22 +202,40 @@ def test(model, test_directory, image_size, args):
         batch_size=args.batch_size,
         image_size=image_size,
         shuffle=False,
-        seed=1337,
-        validation_split=0.2,
-        subset="validation",
     )
-    y_pred, x_recon = model.predict_generator(test_ds, batch_size=100)
-    print('Test acc:', model.evaluate_generator(test_ds))
+    images = []
+    labels = []
+    for image, label in test_ds.take(-1):
+        # visualization(main_image=image[0])
+        images.extend(image / 255)
+        labels.extend(label)
+    images = np.array(images)
+    labels = np.array(labels)
+    print(images.shape)
+    print(labels.shape)
 
-    for images, labels in test_ds.take(1):
-        img = combine_images(np.concatenate([images[:50], x_recon[:50]]))
-    image = img * 255
-    Image.fromarray(image.astype(np.uint8)).save(args.save_dir + "/real_and_recon.png")
-    print()
-    print('Reconstructed images are saved to %s/real_and_recon.png' % args.save_dir)
-    print('-' * 30 + 'End: test' + '-' * 30)
-    plt.imshow(plt.imread(args.save_dir + "/real_and_recon.png"))
-    plt.show()
+    y_pred, x_recon = model.predict(images, batch_size=args.batch_size, steps=int(images.shape[0] / args.batch_size))
+    print('-' * 30 + 'Begin: test' + '-' * 30)
+    y_pred = np.argmax(y_pred, 1)
+    print('Test acc:', np.sum(y_pred == labels) / labels.shape[0])
+
+    # predictions = tf.nn.sigmoid(predictions)
+    # predictions = tf.where(predictions < 0.5, 0, 1)
+
+    print(classification_report(labels, y_pred))
+    print(confusion_matrix(labels, y_pred))
+
+    # print('Test acc:', model.evaluate_generator(test_ds))
+    #
+    # for images, labels in test_ds.take(1):
+    #     img = combine_images(np.concatenate([images[:50], x_recon[:50]]))
+    # image = img * 255
+    # Image.fromarray(image.astype(np.uint8)).save(args.save_dir + "/real_and_recon.png")
+    # print()
+    # print('Reconstructed images are saved to %s/real_and_recon.png' % args.save_dir)
+    # print('-' * 30 + 'End: test' + '-' * 30)
+    # plt.imshow(plt.imread(args.save_dir + "/real_and_recon.png"))
+    # plt.show()
 
 
 def manipulate_latent(model, test_directory, image_size, args):
@@ -205,7 +253,9 @@ def manipulate_latent(model, test_directory, image_size, args):
         subset="validation",
     )
     for (x_test, y_test) in test_ds.take(1):
-        index = np.argmax(y_test, 1) == args.digit
+        print(args.digit)
+        print("y_test", np.argmax(y_test))
+        index = np.argmax(y_test, 0) == args.digit
         number = np.random.randint(low=0, high=sum(index) - 1)
         x, y = x_test[index][number], y_test[index][number]
         x, y = np.expand_dims(x, 0), np.expand_dims(y, 0)
@@ -267,6 +317,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
+    # args.n_class = 10
+    # args.glyph_size = (32, 32, 3)
+    # args.testing = True
+    # args.batch_size = 14
+    # args.test_address = "/home/ruhiii/Downloads/CharFinder/glyphs_sub_digit/glyphs"
+    # args.train_address = "/home/ruhiii/Downloads/CharFinder/glyphs_sub_digit/glyphs"
+    # args.w = "/home/ruhiii/Documents/AUT/Shardari/CapsNet/weights.h5"
+
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
@@ -289,5 +347,5 @@ if __name__ == "__main__":
     else:  # as long as weights are given, will run testing
         if args.weights is None:
             print('No weights are provided. Will test using random initialized weights.')
-        manipulate_latent(manipulate_model, args.test_address, image_size=args.glyph_size[:-1], args=args)
-        test(model=eval_model, test_address=args.test_address, image_size=args.glyph_size[:-1], args=args)
+        # manipulate_latent(manipulate_model, args.test_address, image_size=args.glyph_size[:-1], args=args)
+        test(model=eval_model, test_directory=args.test_address, image_size=args.glyph_size[:-1], args=args)
