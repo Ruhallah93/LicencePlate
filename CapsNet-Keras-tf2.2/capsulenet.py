@@ -306,6 +306,7 @@ if __name__ == "__main__":
                         help="Digit to manipulate")
     parser.add_argument('-w', '--weights', default=None,
                         help="The path of the saved weights. Should be specified when testing")
+
     parser.add_argument('--train_address', type=str, default='synthetic_plates/output/yolo/train/glyphs',
                         help='The address of train dataset')
     parser.add_argument('--valid_address', type=str, default='synthetic_plates/output/yolo/valid/glyphs',

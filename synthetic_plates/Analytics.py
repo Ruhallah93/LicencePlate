@@ -3,7 +3,6 @@ import argparse
 import os
 
 from utils.Utils import letters
-from utils.Utils import parent_path
 
 
 def get_number_analytics(directory):
@@ -39,6 +38,6 @@ if __name__ == '__main__':
     parser.add_argument('--save_path', type=str, default='', help='Dataset path')
     opt = parser.parse_args()
 
-    info = get_number_analytics(parent_path + opt.address)
-    info.to_csv(parent_path + opt.save_path + "statistics.csv")
+    info = get_number_analytics(opt.address)
+    info.to_csv(opt.save_path + "statistics.csv")
     print(info)

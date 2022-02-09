@@ -19,10 +19,17 @@ from keras import backend as K
 
 K.set_image_data_format('channels_last')
 
-from capsulenet import CapsNet, margin_loss, load_mnist, manipulate_latent, test
+from capsulenet import CapsNet, margin_loss, manipulate_latent, test
 
 
-def train(model, data, args):
+def count_files(address):
+    total = 0
+    for root, dirs, files in os.walk(address):
+        total += len(files)
+    return total
+
+
+def train(model, train_directory, valid_directory, image_size, args):
     """
     Training a CapsuleNet
     :param model: the CapsuleNet model
@@ -30,11 +37,11 @@ def train(model, data, args):
     :param args: arguments
     :return: The trained model
     """
-    # unpacking the data
-    (x_train, y_train), (x_test, y_test) = data
 
     # callbacks
     log = callbacks.CSVLogger(args.save_dir + '/log.csv')
+    checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights.h5', monitor='val_capsnet_loss',
+                                           save_best_only=True, save_weights_only=True, verbose=1)
     tb = callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs',
                                batch_size=args.batch_size, histogram_freq=args.debug)
     lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (0.9 ** epoch))
@@ -51,20 +58,30 @@ def train(model, data, args):
     """
 
     # Begin: Training with data augmentation ---------------------------------------------------------------------#
-    def train_generator(x, y, batch_size, shift_fraction=0.):
+    def train_generator(directory, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
-                                           height_shift_range=shift_fraction)  # shift up to 2 pixel for MNIST
-        generator = train_datagen.flow(x, y, batch_size=batch_size)
+                                           height_shift_range=shift_fraction)
+        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
         while 1:
             x_batch, y_batch = generator.next()
+            x_batch /= 255
+            yield ([x_batch, y_batch], [y_batch, x_batch])
+
+    def valid_generator(directory, batch_size):
+        train_datagen = ImageDataGenerator()
+        generator = train_datagen.flow_from_directory(directory, batch_size=batch_size, target_size=image_size)
+        while 1:
+            x_batch, y_batch = generator.next()
+            x_batch /= 255
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
     # Training with data augmentation. If shift_fraction=0., also no augmentation.
-    model.fit_generator(generator=train_generator(x_train, y_train, args.batch_size, args.shift_fraction),
-                        steps_per_epoch=int(y_train.shape[0] / args.batch_size),
-                        epochs=args.epochs,
-                        validation_data=[[x_test, y_test], [y_test, x_test]],
-                        callbacks=[log, tb, lr_decay])
+    model.fit(generator=train_generator(train_directory, args.batch_size, args.shift_fraction),
+              steps_per_epoch=int(count_files(train_directory) / args.batch_size),
+              epochs=args.epochs,
+              validation_data=valid_generator(valid_directory, args.batch_size),
+              validation_steps=int(count_files(valid_directory) / args.batch_size),
+              callbacks=[log, tb, checkpoint, lr_decay])
     # End: Training with data augmentation -----------------------------------------------------------------------#
 
     from utils import plot_log
@@ -84,6 +101,7 @@ if __name__ == "__main__":
 
     # setting the hyper parameters
     import argparse
+
     parser = argparse.ArgumentParser(description="Capsule Network on MNIST.")
     parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--batch_size', default=300, type=int)
@@ -105,21 +123,28 @@ if __name__ == "__main__":
     parser.add_argument('--lr', default=0.001, type=float,
                         help="Initial learning rate")
     parser.add_argument('--gpus', default=2, type=int)
+
+    parser.add_argument('--train_address', type=str, default='synthetic_plates/output/yolo/train/glyphs',
+                        help='The address of train dataset')
+    parser.add_argument('--valid_address', type=str, default='synthetic_plates/output/yolo/valid/glyphs',
+                        help='The address of valid dataset')
+    parser.add_argument('--test_address', type=str, default='synthetic_plates/output/yolo/test/glyphs',
+                        help='The address of test dataset')
+    parser.add_argument('--glyph_size', nargs='+', type=int, default=[80, 80, 3], help='size of saved glyphs')
+    parser.add_argument('--n_class', type=int, default=27, help='number of threads to run')
     args = parser.parse_args()
     print(args)
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    # load data
-    (x_train, y_train), (x_test, y_test) = load_mnist()
-
     # define model
     with tf.device('/cpu:0'):
-        model, eval_model, manipulate_model = CapsNet(input_shape=x_train.shape[1:],
-                                                      n_class=len(np.unique(np.argmax(y_train, 1))),
-                                                      routings=args.routings)
+        model, eval_model, manipulate_model = CapsNet(input_shape=args.glyph_size,
+                                                      n_class=args.n_class,
+                                                      routings=args.routings,
+                                                      batch_size=args.batch_size)
     model.summary()
-    plot_model(model, to_file=args.save_dir+'/model.png', show_shapes=True)
+    plot_model(model, to_file=args.save_dir + '/model.png', show_shapes=True)
 
     # train or test
     if args.weights is not None:  # init the model weights with provided one
@@ -127,12 +152,16 @@ if __name__ == "__main__":
     if not args.testing:
         # define muti-gpu model
         multi_model = multi_gpu_model(model, gpus=args.gpus)
-        train(model=multi_model, data=((x_train, y_train), (x_test, y_test)), args=args)
+        train(model=multi_model,
+              train_directory=args.train_address,
+              valid_directory=args.valid_address,
+              image_size=args.glyph_size[:-1],
+              args=args)
         model.save_weights(args.save_dir + '/trained_model.h5')
         print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)
-        test(model=eval_model, data=(x_test, y_test), args=args)
+        test(model=eval_model, test_directory=args.test_address, image_size=args.glyph_size[:-1], args=args)
     else:  # as long as weights are given, will run testing
         if args.weights is None:
             print('No weights are provided. Will test using random initialized weights.')
-        manipulate_latent(manipulate_model, (x_test, y_test), args)
-        test(model=eval_model, data=(x_test, y_test), args=args)
+        # manipulate_latent(manipulate_model, args.test_address, image_size=args.glyph_size[:-1], args=args)
+        test(model=eval_model, test_directory=args.test_address, image_size=args.glyph_size[:-1], args=args)
