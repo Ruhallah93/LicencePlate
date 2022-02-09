@@ -14,8 +14,9 @@ Result:
 Author: Xifeng Guo, E-mail: `guoxifeng1990@163.com`, Github: `https://github.com/XifengGuo/CapsNet-Keras`
 """
 
-from keras import optimizers
-from keras import backend as K
+from tensorflow.keras import optimizers
+from tensorflow.keras import backend as K
+from tensorflow.python.keras.utils.vis_utils import plot_model
 
 K.set_image_data_format('channels_last')
 
@@ -94,11 +95,9 @@ if __name__ == "__main__":
     import numpy as np
     import tensorflow as tf
     import os
-    from keras.preprocessing.image import ImageDataGenerator
-    from keras import callbacks
-    from keras.utils.vis_utils import plot_model
-    from keras.utils import multi_gpu_model
-
+    from tensorflow.keras.preprocessing.image import ImageDataGenerator
+    from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+    from tensorflow.keras import callbacks
     # setting the hyper parameters
     import argparse
 
