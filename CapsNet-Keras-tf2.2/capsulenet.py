@@ -341,7 +341,7 @@ if __name__ == "__main__":
     if not args.testing:
         train(model=model,
               train_directory=args.train_address,
-              valid_directory=args.test_address,
+              valid_directory=args.valid_address,
               image_size=args.glyph_size[:-1],
               args=args)
     else:  # as long as weights are given, will run testing
