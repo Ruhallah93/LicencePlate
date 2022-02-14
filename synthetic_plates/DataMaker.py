@@ -153,8 +153,8 @@ def generate_and_save_plates(store_address, cars,
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=100, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[500, 400], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
@@ -165,16 +165,16 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='grayscale', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/unet3', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/unet', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     opt = parser.parse_args()
 
-    opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
-    opt.save_glyphs = True
-    opt.crop_to_content = True
-    opt.mask_state = "grayscale"
+    # opt.save_plate = True
+    # opt.save_mask = True
+    # opt.save_bounding_boxes = True
+    # opt.save_glyphs = True
+    # opt.crop_to_content = True
+    # opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address
