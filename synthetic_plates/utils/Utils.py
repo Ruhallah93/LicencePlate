@@ -316,3 +316,11 @@ def resize(img, sizes):
     w_background = Image.new('RGB', sizes, (255, 255, 255))
     w_background.paste(img, (0, 0))
     return w_background
+
+
+def resize2(img, sizes):
+    img = img.resize(sizes)
+    w_background = Image.new('RGB', sizes, (255, 255, 255))
+    w_background.paste(img, (0, 0))
+    visualization(w_background)
+    return w_background
