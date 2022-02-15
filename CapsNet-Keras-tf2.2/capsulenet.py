@@ -28,6 +28,7 @@ from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 import os
 import cv2
 import PIL.ImageOps
+from keras.preprocessing.image import array_to_img
 
 K.set_image_data_format('channels_last')
 
@@ -225,6 +226,11 @@ def test(model, test_directory, image_size, args):
     print(classification_report(labels, y_pred))
     print(confusion_matrix(labels, y_pred))
 
+    diff = np.where(labels != y_pred)
+    for i, (img, label) in enumerate(zip(images[diff], labels[diff])):
+        img = array_to_img(img * 255, scale=False)
+        img.save('wrong_predicts/{}${}.png'.format(label, i), format="PNG")
+
     # print('Test acc:', model.evaluate_generator(test_ds))
     #
     # for images, labels in test_ds.take(1):
@@ -286,7 +292,7 @@ if __name__ == "__main__":
     # setting the hyper parameters
     parser = argparse.ArgumentParser(description="Capsule Network on MNIST.")
     parser.add_argument('--epochs', default=50, type=int)
-    parser.add_argument('--batch_size', default=100, type=int)
+    parser.add_argument('--batch_size', default=14, type=int)
     parser.add_argument('--lr', default=0.001, type=float,
                         help="Initial learning rate")
     parser.add_argument('--lr_decay', default=0.9, type=float,
@@ -324,7 +330,7 @@ if __name__ == "__main__":
     # args.batch_size = 14
     # args.test_address = "/home/ruhiii/Downloads/CharFinder/glyphs_sub_digit/glyphs"
     # args.train_address = "/home/ruhiii/Downloads/CharFinder/glyphs_sub_digit/glyphs"
-    # args.w = "/home/ruhiii/Documents/AUT/Shardari/CapsNet/weights.h5"
+    # args.w = "/home/ruhiii/Documents/AUT/Shardari/CapsNet/3/weights.h5"
 
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)

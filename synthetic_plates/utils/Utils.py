@@ -109,11 +109,14 @@ def apply_glyphs(plate, mask_state):
 
 def adjust_glyphs(glyph_images, plate):
     w = 0
+    boxes = []
     for i, glyph in enumerate(glyph_images[:-2]):
         if i == 2:
             plate.paste(glyph, (70 + w, 30), mask=glyph)
+            boxes.append([70 + w, 30, glyph.size[0], glyph.size[1]])
         else:
             plate.paste(glyph, (70 + w, 25), mask=glyph)
+            boxes.append([70 + w, 25, glyph.size[0], glyph.size[1]])
         w += glyph.size[0] + 3
 
     # last two digits
@@ -122,8 +125,9 @@ def adjust_glyphs(glyph_images, plate):
         width, height = glyph.size[0], glyph.size[1]
         resized_glyph = glyph.resize((int(width * 0.75), int(height * 0.75)))
         plate.paste(resized_glyph, (485 + w, 50), mask=resized_glyph)
+        boxes.append([485 + w, 50, resized_glyph.size[0], resized_glyph.size[1]])
         w += glyph.size[0] - 10
-    return plate
+    return plate, boxes
 
 
 def create_noise_palettes(img_shape):

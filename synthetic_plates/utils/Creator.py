@@ -12,7 +12,7 @@ parent_path = package_directory[:package_directory.rindex(separetor)] + separeto
 
 def get_new_plate(img_size,
                   rotation_maximums,
-                  plate_size=(312, 70),
+                  plate_size=(600, 132),
                   paste_point=(0, 0),
                   mask_state='grayscale',
                   pad: tuple = (50, 50, 50, 50),
@@ -47,8 +47,11 @@ def get_new_plate(img_size,
     glyph_images, glyph_images_mask = apply_glyphs(plate, mask_state)
 
     # adding glyph images with 11 pixel margin
-    new_plate = adjust_glyphs(glyph_images, new_plate)
-    mask = adjust_glyphs(glyph_images_mask, mask)
+    new_plate, plate_boxes = adjust_glyphs(glyph_images, new_plate)
+    mask, mask_boxes = adjust_glyphs(glyph_images_mask, mask)
+
+    # visualization(new_plate, boxes=plate_boxes)
+    # visualization(mask, boxes=mask_boxes)
 
     new_plate_2 = new_plate.resize(plate_size, Image.ANTIALIAS)
     mask = mask.resize(plate_size, Image.ANTIALIAS)

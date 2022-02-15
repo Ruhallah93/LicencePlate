@@ -5,7 +5,7 @@ import numpy as np
 
 
 class ImageNoise(Noise):
-    def __init__(self, pathToImage, plate_size: tuple = (312, 70)):
+    def __init__(self, pathToImage, plate_size: tuple = (600, 132)):
         super()
         self.pathToImage = pathToImage
         self.plate_size = plate_size

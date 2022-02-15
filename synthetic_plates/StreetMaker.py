@@ -68,7 +68,7 @@ def generate_and_save_streets(store_address, backgrounds, cars,
             w = int(img_size[0] / n_column)
             h = int(img_size[1] / grid_size[0])
             # The size of plate
-            plate_size = (312, 70)
+            plate_size = (600, 132)
             p_w = int(w * 0.67)
             plate_size = (p_w, int(plate_size[1] * p_w / plate_size[0]))
             # The padding size

@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import functools
 
-from .Utils import set_background
+from .Utils import set_background, visualization
 
 
 def compare(rect1, rect2):
@@ -15,11 +15,12 @@ def compare(rect1, rect2):
 def get_mask(img):
     # img[np.where(img != 255)] = 0
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    gray = cv2.GaussianBlur(gray, (11, 11), 0)
 
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 45)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 45, 75)
     _, labels = cv2.connectedComponents(thresh)
     mask = np.zeros(thresh.shape, dtype="uint8")
+
     for (i, label) in enumerate(np.unique(labels)):
         # If this is the background label, ignore it
         if label == 0:
@@ -46,6 +47,8 @@ def get_bounding_boxes(img):
     cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     boundingBoxes1 = [cv2.boundingRect(c) for c in cnts]
     boundingBoxes = sorted(boundingBoxes1, key=functools.cmp_to_key(compare))
+
+    # visualization(img, boxes=boundingBoxes)
 
     merged_boxes = list()
     banned = []
@@ -208,6 +211,8 @@ def create_perspective(img, mask,
     glyph_boxes, _ = get_bounding_boxes(mask)
     combined_boxed = glyph_boxes + [plate_box]
 
+    # visualization(mask, [mask], boxes=combined_boxed, waitKey=0)
+
     before_altering = img.copy()
 
     # Convert RBGA -> BGRA
@@ -222,7 +227,6 @@ def create_perspective(img, mask,
                                                            paste_point=paste_point,
                                                            min_random_scale=random_scale,
                                                            background_path=background_path)
-
 
     glyph_boxes = np.array(combined_boxed[:-1])
     plate_box = combined_boxed[-1]

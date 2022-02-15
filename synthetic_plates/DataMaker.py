@@ -77,12 +77,12 @@ def generate_and_save_plates(store_address, cars,
                              glyph_state='grayscale', save_glyph_mode='alphabet+digit'):
     random.seed(datetime.now())
 
-    rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [15], 'pitch+yaw': [30, 30],
+    rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [30], 'pitch+yaw': [30, 30],
                          'pitch+yaw+roll': [30, 30, 15]}
 
     counter = 0
     for i in range(dataset_size):
-        plate_size = (312, 70)
+        plate_size = (600, 132)
         attach_point = (int((img_size[1] - plate_size[1]) / 2), int((img_size[0] - plate_size[0]) / 2))
 
         # Select randomly a car
@@ -122,7 +122,7 @@ def generate_and_save_plates(store_address, cars,
                              save_mode=save_glyph_mode)
 
         # Visualization
-        # visualization(perspective_plate, [mask], waitKey=500)
+        visualization(perspective_plate, [mask], waitKey=500)
 
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
@@ -154,27 +154,27 @@ if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
-    parser.add_argument('--img_size', nargs='+', type=int, default=[500, 400], help='size of background')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 800], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
     parser.add_argument('--save_mask', action='store_true', help='save the masks if true')
     parser.add_argument('--save_glyphs', action='store_true', help='save the masks if true')
     parser.add_argument('--crop_to_content', action='store_true', help='save only plate')
     parser.add_argument('--glyph_size', nargs='+', type=int, default=[32, 32], help='size of saved glyphs')
-    parser.add_argument('--glyph_state', type=str, default='grayscale', help='grayscale or colorful')
+    parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/unet', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/unet6', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     opt = parser.parse_args()
 
-    # opt.save_plate = True
-    # opt.save_mask = True
-    # opt.save_bounding_boxes = True
-    # opt.save_glyphs = True
-    # opt.crop_to_content = True
-    # opt.mask_state = "grayscale"
+    opt.save_plate = True
+    opt.save_mask = True
+    opt.save_bounding_boxes = True
+    opt.save_glyphs = True
+    opt.crop_to_content = True
+    opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address
