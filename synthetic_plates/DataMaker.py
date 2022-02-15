@@ -122,7 +122,7 @@ def generate_and_save_plates(store_address, cars,
                              save_mode=save_glyph_mode)
 
         # Visualization
-        visualization(perspective_plate, [mask], waitKey=500)
+        # visualization(perspective_plate, [mask], waitKey=500)
 
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
@@ -169,12 +169,12 @@ if __name__ == '__main__':
     parser.add_argument('--cars', type=str, default='files/cars')
     opt = parser.parse_args()
 
-    opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
-    opt.save_glyphs = True
-    opt.crop_to_content = True
-    opt.mask_state = "grayscale"
+    # opt.save_plate = True
+    # opt.save_mask = True
+    # opt.save_bounding_boxes = True
+    # opt.save_glyphs = True
+    # opt.crop_to_content = True
+    # opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
     directory = address + "images" + os.sep if opt.save_mask else address
