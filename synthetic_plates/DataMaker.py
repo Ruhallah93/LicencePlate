@@ -122,7 +122,7 @@ def generate_and_save_plates(store_address, cars,
                              save_mode=save_glyph_mode)
 
         # Visualization
-        # visualization(perspective_plate, [mask], waitKey=500)
+        visualization(perspective_plate, [mask], waitKey=0)
 
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]

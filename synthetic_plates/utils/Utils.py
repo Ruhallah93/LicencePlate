@@ -145,44 +145,56 @@ def create_noise_palettes(img_shape):
     image_noise10 = ImageNoise(parent_path + 'files/noises/noise10.png', plate_size=img_shape)
 
     ##################################
-    # Generate randoms
-    blur_kernel_size = random.choice(np.arange(3, 8, 2))
-    blur_sigma = random.randint(3, 8)
-    light_param = random.randint(-170, 170)
-    random_rect_start = [random.randint(0, img_shape[0] - 5), random.randint(0, img_shape[1] - 5)]
-    random_rect_end = [random.randint(random_rect_start[0], img_shape[0]),
-                       random.randint(random_rect_start[1], img_shape[1])]
-    area = random.choice([-1, [random_rect_start, random_rect_end]])
-    r_circle = random.randint(15, 31)
-    n_circle = random.randint(1, 3)
-    kernel_sigma = random.random()
+    # Generate randoms Parameters
+    # Set Noise Parameters
+
+    par_state = 'max'
+
+    # Random
+    blur_kernel_size = {'rand': random.choice(np.arange(3, 8, 2)), 'min': 3, 'max': 7}
+    blur_sigma = {'rand': random.randint(3, 8), 'min': 3, 'max': 7}
+    light_param = {'rand': random.randint(-170, 170), 'min': -170, 'max': 169}
+    random_rect_start = {'rand': [random.randint(0, img_shape[0] - 5), random.randint(0, img_shape[1] - 5)],
+                         'min': [0, 0], 'max': [img_shape[0] - 6, img_shape[1] - 6]}
+    random_rect_end = {'rand': [random.randint(random_rect_start[par_state][0], img_shape[0]),
+                                random.randint(random_rect_start[par_state][1], img_shape[1])],
+                       'min': [random_rect_start[par_state][0], random_rect_start[par_state][1]], 'max': [img_shape[0] - 1, img_shape[1] - 1]}
+    area = {'rand': random.choice([-1, [random_rect_start[par_state], random_rect_end[par_state]]]),
+            'min': [random_rect_start[par_state], random_rect_end[par_state]], 'max': -1}
+    r_circle = {'rand': random.randint(15, 31), 'min': 15, 'max': 30}
+    n_circle = {'rand': 1, 'min': 1, 'max': 1}
+    kernel_sigma = {'rand': random.random(), 'min': 0, 'max': 0.99}
     # r_random = random.randint(0, 4)
-    r_random = 1
+    r_random = {'rand': 1, 'min': 1, 'max': 1}
 
     min_salt = 0.15
     max_salt = 0.3
     # max_salt / (min_salt + 1) = 0.3/1.15 = 30/115
-    amount_sp = (random.random() * (max_salt - min_salt)) + min_salt
+    amount_sp = {'rand': (random.random() * (max_salt - min_salt)) + min_salt, 'min': min_salt, 'max': max_salt}
     bw_random = bool(random.getrandbits(1))
-    pepper_color = random.randint(0, 128)
-    salt_color = random.randint(128, 256)
+    pepper_color = {'rand': random.randint(0, 128), 'min': 0, 'max': 127}
+    salt_color = {'rand': random.randint(128, 256), 'min': 128, 'max': 255}
 
     ##################################
 
     # area: -1 in part 2 means go to end, Example: area=[[0, 0], [-1, 40]]
-    light_noise = LightNoise(light_param=light_param, area=area)
-    gradient_light_noise = GradientLightNoise(max_light_param=light_param, area=area, r=r_random)
-    circular_light_noise = CircularLightNoise(light_param=light_param, n_circle=n_circle,
-                                              r_circle=r_circle, kernel_sigma=kernel_sigma)
-    s_p_noise = SPNoise(s_vs_p=0.5, amount=amount_sp, bw=bw_random, pepper_color=pepper_color, salt_color=salt_color)
-    negative_noise = NegativeNoise(blur_kernel_size=0, negative_param=-10, area=area)
+    light_noise = LightNoise(light_param=light_param[par_state], area=area[par_state])
+    gradient_light_noise = GradientLightNoise(max_light_param=light_param[par_state], area=area[par_state],
+                                              r=r_random[par_state])
+    circular_light_noise = CircularLightNoise(light_param=light_param[par_state], n_circle=n_circle[par_state],
+                                              r_circle=r_circle[par_state], kernel_sigma=kernel_sigma[par_state])
+    s_p_noise = SPNoise(s_vs_p=0.5, amount=amount_sp[par_state], bw=bw_random, pepper_color=pepper_color[par_state],
+                        salt_color=salt_color[par_state])
+    negative_noise = NegativeNoise(blur_kernel_size=0, negative_param=-10, area=area[par_state])
 
     # lightNoise2 = ...
     noise_set2 = [image_noise7, image_noise8, image_noise10, light_noise,
+
                   gradient_light_noise, circular_light_noise, s_p_noise, negative_noise]
 
     # BlurNoises
-    blur_noise = BlurNoise(blur_type='gaussian', blur_kernel_size=blur_kernel_size, blur_sigma=blur_sigma)
+    blur_noise = BlurNoise(blur_type='gaussian', blur_kernel_size=blur_kernel_size[par_state],
+                           blur_sigma=blur_sigma[par_state])
 
     # BlurNoises array
     noise_set3 = [blur_noise]
