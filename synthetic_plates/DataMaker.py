@@ -102,8 +102,13 @@ def generate_and_save_plates(store_address, cars,
         # Adjust size
         perspective_plate, mask = adjust_plate_and_mask_size(perspective_plate, mask, img_size)
 
+        black_white_random = random.randint(1, 10)
         # Numpy array to PIL
-        perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_RGBA2BGR)
+        if black_white_random == 1:
+            perspective_plate = cv2.cvtColor(cv2.cvtColor(perspective_plate, cv2.COLOR_RGBA2GRAY), cv2.COLOR_GRAY2BGR)
+        else:
+            perspective_plate = cv2.cvtColor(perspective_plate, cv2.COLOR_RGBA2BGR)
+
         perspective_plate = Image.fromarray(perspective_plate)
         mask = cv2.cvtColor(mask, cv2.COLOR_RGBA2BGR)
         mask = Image.fromarray(mask)

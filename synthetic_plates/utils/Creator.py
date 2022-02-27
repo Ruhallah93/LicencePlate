@@ -16,7 +16,7 @@ def get_new_plate(img_size,
                   paste_point=(0, 0),
                   mask_state='grayscale',
                   pad: tuple = (50, 50, 50, 50),
-                  random_scale=0.5,
+                  random_scale=0.3,
                   background_path="r"):
     """
         img_size: size of whole image,

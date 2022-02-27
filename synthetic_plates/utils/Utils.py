@@ -151,14 +151,15 @@ def create_noise_palettes(img_shape):
     par_state = 'max'
 
     # Random
-    blur_kernel_size = {'rand': random.choice(np.arange(3, 8, 2)), 'min': 3, 'max': 7}
+    blur_kernel_size = {'rand': random.choice(np.arange(3, 16, 2)), 'min': 3, 'max': 15}
     blur_sigma = {'rand': random.randint(3, 8), 'min': 3, 'max': 7}
     light_param = {'rand': random.randint(-170, 170), 'min': -170, 'max': 169}
     random_rect_start = {'rand': [random.randint(0, img_shape[0] - 5), random.randint(0, img_shape[1] - 5)],
                          'min': [0, 0], 'max': [img_shape[0] - 6, img_shape[1] - 6]}
     random_rect_end = {'rand': [random.randint(random_rect_start[par_state][0], img_shape[0]),
                                 random.randint(random_rect_start[par_state][1], img_shape[1])],
-                       'min': [random_rect_start[par_state][0], random_rect_start[par_state][1]], 'max': [img_shape[0] - 1, img_shape[1] - 1]}
+                       'min': [random_rect_start[par_state][0], random_rect_start[par_state][1]],
+                       'max': [img_shape[0] - 1, img_shape[1] - 1]}
     area = {'rand': random.choice([-1, [random_rect_start[par_state], random_rect_end[par_state]]]),
             'min': [random_rect_start[par_state], random_rect_end[par_state]], 'max': -1}
     r_circle = {'rand': random.randint(15, 31), 'min': 15, 'max': 30}
@@ -168,7 +169,7 @@ def create_noise_palettes(img_shape):
     r_random = {'rand': 1, 'min': 1, 'max': 1}
 
     min_salt = 0.15
-    max_salt = 0.3
+    max_salt = 0.4
     # max_salt / (min_salt + 1) = 0.3/1.15 = 30/115
     amount_sp = {'rand': (random.random() * (max_salt - min_salt)) + min_salt, 'min': min_salt, 'max': max_salt}
     bw_random = bool(random.getrandbits(1))
@@ -212,7 +213,7 @@ def set_background(img, mask, merged_boxes,
     img: plate image
     width, height: width & height of background, if width == -1: make a random number for width
     and if width < def license plate size: width = lp_size[0]
-    random_scale: =0, dont scale img. !=0, resize img with random scale between img.dim -+ img.dim * random_scale
+    random_scale: =0, dont scale img. !=0, resize img with random scale between img.dim -+ \
     background_path: background path image, if pass this argument r, set a random static color for background
     position: position of license plate in the background, if pass -1 generate a random position
     """
@@ -240,6 +241,8 @@ def set_background(img, mask, merged_boxes,
     if min_random_scale != 0:
         # Make (random) scale and then set new_width and new_height
         random_scale = random.uniform(min_random_scale, 1)
+        # random_scale = min_random_scale
+        # random_scale = 1
         new_height = int(background_size[0] * random_scale)
         new_width = int(background_size[1] * random_scale)
         background = background.resize((new_height, new_width), Image.ANTIALIAS)
@@ -309,6 +312,10 @@ def rgba_2_bgr(img):
         return np.array(Image.fromarray(street))
     else:
         return np.array(img)
+
+
+def rbga2gray(img):
+    return cv2.cvtColor(cv2.cvtColor(img, cv2.COLOR_RGBA2GRAY), cv2.COLOR_GRAY2BGR)
 
 
 def visualization(main_image, images=None, boxes=None, waitKey=0):
