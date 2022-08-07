@@ -34,8 +34,8 @@ def get_number_analytics(directory):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--address', type=str, default='output/unet', help='Dataset path')
-    parser.add_argument('--save_path', type=str, default='', help='Dataset path')
+    parser.add_argument('--address', type=str, default='output/sara/Corrupt/images', help='Dataset path')
+    parser.add_argument('--save_path', type=str, default='output/sara/Corrupt/images', help='Dataset path')
     opt = parser.parse_args()
 
     info = get_number_analytics(opt.address)

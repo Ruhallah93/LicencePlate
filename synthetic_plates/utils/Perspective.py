@@ -173,14 +173,41 @@ def get_perspective_matrix(width, height, perspective_type, max_thetas):
     return cv2.getPerspectiveTransform(inp, out)
 
 
+def get_perspective_matrix2(width, height, thetas):
+    """
+    get prespective matrix for an image
+    """
+    p1, p2, p3, p4 = ((0, 0),
+                      (0 + width - 1, 0),
+                      (0 + width - 1, 0 + height - 1),
+                      (0, 0 + height - 1))
+    inp = np.float32([[p1[0], p1[1]],
+                      [p2[0], p2[1]],
+                      [p3[0], p3[1]],
+                      [p4[0], p4[1]]])
+
+    direction = np.random.choice([1, -1])
+    step_length = thetas['roll']
+    p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
+    step_length = thetas['yaw']
+    p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
+    theta = thetas['roll'] * direction
+    p1, p2, p3, p4 = roll(p1, p2, p3, p4, x=width / 2, y=height / 2, theta=theta)
+
+    out = np.float32([[p1[0], p1[1]],
+                      [p2[0], p2[1]],
+                      [p3[0], p3[1]],
+                      [p4[0], p4[1]]])
+
+    return cv2.getPerspectiveTransform(inp, out)
+
+
 def create_perspective(img, mask,
                        img_size: tuple,
-                       plate_size: tuple,
                        paste_point: tuple,
                        noises: list,
-                       rotation_maximums,
+                       rotations,
                        background_path,
-                       perspective_type: int = 1,
                        pad: tuple = (100, 100, 100, 100),
                        random_scale=0.5):
     """
@@ -225,7 +252,7 @@ def create_perspective(img, mask,
     before_altering, mask, combined_boxed = set_background(before_altering, mask, combined_boxed,
                                                            background_size=img_size,
                                                            paste_point=paste_point,
-                                                           min_random_scale=random_scale,
+                                                           random_scale=random_scale,
                                                            background_path=background_path)
 
     glyph_boxes = np.array(combined_boxed[:-1])
@@ -239,7 +266,7 @@ def create_perspective(img, mask,
     glyph_boxes[:, 0] = glyph_boxes[:, 0] + pad[2]
     glyph_boxes[:, 1] = glyph_boxes[:, 1] + pad[0]
 
-    matrix = get_perspective_matrix(width, height, perspective_type, max_thetas=rotation_maximums)
+    matrix = get_perspective_matrix2(width, height, thetas=rotations)
     newHeight, newWidth = mask.shape[:2]
 
     imgOutput = mask.copy()
