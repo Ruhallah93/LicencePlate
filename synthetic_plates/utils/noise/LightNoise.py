@@ -8,8 +8,8 @@ class LightNoise(Noise):
     # area: -1 in part 2 means go to end, Example: area=[[0, 0], [-1, 40]]
     def __init__(self, blur_kernel_size=0, light_param=100, area=-1):
         super()
-        self.blur_kernel_size = blur_kernel_size
-        self.light_param = light_param
+        self.blur_kernel_size = int(np.round(blur_kernel_size))
+        self.light_param = int(np.round(light_param))
         self.area = area
 
     def apply(self, img):

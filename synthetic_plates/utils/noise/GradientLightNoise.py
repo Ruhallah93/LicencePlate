@@ -9,8 +9,8 @@ class GradientLightNoise(Noise):
     # area: -1 in part 2 means go to end, Example: area=[[0, 0], [-1, 40]]
     def __init__(self, blur_kernel_size=0, max_light_param=-170, area=-1, r=1):
         super()
-        self.blur_kernel_size = blur_kernel_size
-        self.max_light_param = max_light_param
+        self.blur_kernel_size = int(np.round(blur_kernel_size))
+        self.max_light_param = int(np.round(max_light_param))
         self.area = area
         self.r = r
 

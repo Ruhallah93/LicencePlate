@@ -4,7 +4,7 @@ import os
 
 ranges = pd.read_csv("utils/noise/noises_parameters_ranges.csv")
 ranges.set_index("Name", inplace=True)
-address = "output/sara/"
+address = "output/sara2/"
 nvs = pd.read_csv(address + "noise_vectors.csv")
 
 
@@ -18,8 +18,10 @@ def transform_back(X, min, max):
 
 # nvs['image'] = transform_back(nvs['image'], float(ranges.loc["image_min"]), float(ranges.loc["image_max"]))
 
-nvs['image'] = nvs['image'].astype(np.float16)
-nvs['image'] = transform(nvs['image'], float(ranges.loc["image_min"]), float(ranges.loc["image_max"]))
+for i in range(1, 11):
+    nvs['image_' + str(i)] = nvs['image_' + str(i)].astype(np.float16)
+    nvs['image_' + str(i)] = transform(nvs['image_' + str(i)], float(ranges.loc["image_min"]), float(ranges.loc["image_max"]))
+
 nvs['LightNoise'] = nvs['LightNoise'].astype(np.float16)
 nvs['LightNoise'] = transform(nvs['LightNoise'], float(ranges.loc["LightNoise_min"]),
                               float(ranges.loc["LightNoise_max"]))

@@ -1,14 +1,14 @@
 import cv2
 
 from .Noise import Noise
-
+import numpy as np
 
 class BlurNoise(Noise):
     def __init__(self, blur_type='gaussian', blur_kernel_size=7, blur_sigma=10):
         super()
         self.blur_type = blur_type
-        self.blur_kernel_size = blur_kernel_size
-        self.blur_sigma = blur_sigma
+        self.blur_kernel_size = int(np.round(blur_kernel_size))
+        self.blur_sigma = int(np.round(blur_sigma))
 
     def apply(self, img):
         # cv2.imshow("s", img)

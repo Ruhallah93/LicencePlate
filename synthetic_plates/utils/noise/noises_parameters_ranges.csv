@@ -1,6 +1,6 @@
 "Name","Value"
 image_min,0
-image_max,10
+image_max,1
 LightNoise_min,0
 LightNoise_max,1
 LightNoise_light_param_min,-170

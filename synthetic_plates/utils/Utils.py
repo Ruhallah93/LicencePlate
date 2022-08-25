@@ -2,6 +2,7 @@ import cv2
 import random
 from PIL import Image
 import os
+import pandas as pd
 from .noise.BlurNoise import BlurNoise
 from .noise.CircularLightNoise import CircularLightNoise
 from .noise.GradientLightNoise import GradientLightNoise
@@ -205,9 +206,10 @@ def create_noise_palettes(img_shape):
 
 def create_noise_sequence(img_shape, noise_dic):
     noises = []
-    if noise_dic["image"] > 0:
-        image_noise = ImageNoise(parent_path + f'files/noises/noise{noise_dic["image"]}.png', plate_size=img_shape)
-        noises.append(image_noise)
+    for i in range(1, 11):
+        if noise_dic['image_' + str(i)] > 0.05:
+            image_noise = ImageNoise(parent_path + f'files/noises/noise{i}.png', plate_size=img_shape)
+            noises.append(image_noise)
 
     ##################################
     # Generate randoms Parameters
@@ -242,31 +244,31 @@ def create_noise_sequence(img_shape, noise_dic):
     salt_color = {'rand': random.randint(128, 256), 'min': 128, 'max': 255}
 
     ##################################
-    if noise_dic['LightNoise'] == 1:
+    if noise_dic['LightNoise'] > 0.5:
         light_noise = LightNoise(light_param=noise_dic['LightNoise_light_param'], area=area[par_state])
         noises.append(light_noise)
-    if noise_dic['GradientLightNoise'] == 1:
+    if noise_dic['GradientLightNoise'] > 0.5:
         gradient_light_noise = GradientLightNoise(max_light_param=noise_dic['GradientLightNoise_light_param'],
                                                   area=area[par_state],
                                                   r=r_random[par_state])
         noises.append(gradient_light_noise)
-    if noise_dic['CircularLightNoise'] == 1:
+    if noise_dic['CircularLightNoise'] > 0.5:
         circular_light_noise = CircularLightNoise(light_param=noise_dic['CircularLightNoise_light_param'],
                                                   n_circle=n_circle[par_state],
                                                   r_circle=noise_dic['CircularLightNoise_r_circle'],
                                                   kernel_sigma=noise_dic['CircularLightNoise_kernel_sigma'])
         noises.append(circular_light_noise)
-    if noise_dic['SPNoise'] == 1:
+    if noise_dic['SPNoise'] > 0.5:
         s_p_noise = SPNoise(s_vs_p=0.5,
                             amount=noise_dic['SPNoise_amount_sp'],
                             bw=bool(noise_dic['SPNoise_bw']),
                             pepper_color=noise_dic['SPNoise_pepper_color'],
                             salt_color=noise_dic['SPNoise_salt_color'])
         noises.append(s_p_noise)
-    if noise_dic['NegativeNoise'] == 1:
+    if noise_dic['NegativeNoise'] > 0.5:
         negative_noise = NegativeNoise(blur_kernel_size=0, negative_param=-10, area=area[par_state])
         noises.append(negative_noise)
-    if noise_dic['BlurNoise'] == 1:
+    if noise_dic['BlurNoise'] > 0.5:
         blur_noise = BlurNoise(blur_type='gaussian',
                                blur_kernel_size=noise_dic['BlurNoise_blur_kernel_size'],
                                blur_sigma=noise_dic['BlurNoise_blur_sigma'])
@@ -275,37 +277,49 @@ def create_noise_sequence(img_shape, noise_dic):
     return noises
 
 
-def create_noise_dictionary(img_shape):
+def create_noise_dictionary(ranges_address):
+    ranges = pd.read_csv(ranges_address)
+    ranges.set_index("Name", inplace=True)
     noise_dic = {}
 
-    r = random.randint(0, 3)
-    functions = ['image', 'LightNoise', 'GradientLightNoise', 'CircularLightNoise', 'SPNoise', 'NegativeNoise',
+    r = random.randint(0, 4)
+    functions = ['LightNoise', 'GradientLightNoise', 'CircularLightNoise', 'SPNoise', 'NegativeNoise',
                  'BlurNoise']
+    for i in range(1, 11):
+        functions.append('image_' + str(i))
+
     selected_noises = random.choices(functions, k=r)
 
-    if 'image' in selected_noises:
-        noise_dic['image'] = random.randint(1, 10)
-    else:
-        noise_dic['image'] = 0
+    for i in range(1, 11):
+        if 'image_' + str(i) in selected_noises:
+            noise_dic['image_' + str(i)] = 1
+        else:
+            noise_dic['image_' + str(i)] = 0
 
     if 'LightNoise' in selected_noises:
         noise_dic['LightNoise'] = 1
-        noise_dic['LightNoise_light_param'] = random.randint(-170, 170)
+        noise_dic['LightNoise_light_param'] = random.randint(float(ranges.loc["LightNoise_light_param_min"]),
+                                                             float(ranges.loc["LightNoise_light_param_max"]))
     else:
         noise_dic['LightNoise'] = 0
         noise_dic['LightNoise_light_param'] = 0
 
     if 'GradientLightNoise' in selected_noises:
         noise_dic['GradientLightNoise'] = 1
-        noise_dic['GradientLightNoise_light_param'] = random.randint(-170, 170)
+        noise_dic['GradientLightNoise_light_param'] = random.randint(
+            float(ranges.loc["GradientLightNoise_light_param_min"]),
+            float(ranges.loc["GradientLightNoise_light_param_max"]))
     else:
         noise_dic['GradientLightNoise'] = 0
         noise_dic['GradientLightNoise_light_param'] = 0
 
     if 'CircularLightNoise' in selected_noises:
         noise_dic['CircularLightNoise'] = 1
-        noise_dic['CircularLightNoise_light_param'] = random.randint(-170, 170)
-        noise_dic['CircularLightNoise_r_circle'] = random.randint(15, 31)
+        noise_dic['CircularLightNoise_light_param'] = random.randint(
+            float(ranges.loc["CircularLightNoise_light_param_min"]),
+            float(ranges.loc["CircularLightNoise_light_param_max"]))
+        noise_dic['CircularLightNoise_r_circle'] = random.randint(float(ranges.loc["CircularLightNoise_r_circle_min"]),
+                                                                  float(ranges.loc["CircularLightNoise_r_circle_max"]))
         noise_dic['CircularLightNoise_kernel_sigma'] = random.random()
     else:
         noise_dic['CircularLightNoise'] = 0
@@ -315,12 +329,14 @@ def create_noise_dictionary(img_shape):
 
     if 'SPNoise' in selected_noises:
         noise_dic['SPNoise'] = 1
-        min_salt = 0.15
-        max_salt = 0.4
+        min_salt = float(ranges.loc["SPNoise_amount_sp_min"])
+        max_salt = float(ranges.loc["SPNoise_amount_sp_max"])
         noise_dic['SPNoise_amount_sp'] = (random.random() * (max_salt - min_salt)) + min_salt
-        noise_dic['SPNoise_bw'] = random.getrandbits(1)
-        noise_dic['SPNoise_pepper_color'] = random.randint(0, 128)
-        noise_dic['SPNoise_salt_color'] = random.randint(128, 256)
+        noise_dic['SPNoise_bw'] = random.getrandbits(int(ranges.loc["SPNoise_bw_max"]))
+        noise_dic['SPNoise_pepper_color'] = random.randint(float(ranges.loc["SPNoise_pepper_color_min"]),
+                                                           float(ranges.loc["SPNoise_pepper_color_max"]))
+        noise_dic['SPNoise_salt_color'] = random.randint(float(ranges.loc["SPNoise_salt_color_min"]),
+                                                         float(ranges.loc["SPNoise_salt_color_max"]))
     else:
         noise_dic['SPNoise'] = 0
         noise_dic['SPNoise_amount_sp'] = 0
@@ -335,8 +351,11 @@ def create_noise_dictionary(img_shape):
 
     if 'BlurNoise' in selected_noises:
         noise_dic['BlurNoise'] = 1
-        noise_dic['BlurNoise_blur_sigma'] = random.randint(3, 8)
-        noise_dic['BlurNoise_blur_kernel_size'] = random.choice(np.arange(3, 16, 2))
+        noise_dic['BlurNoise_blur_sigma'] = random.randint(float(ranges.loc["BlurNoise_blur_sigma_min"]),
+                                                           float(ranges.loc["BlurNoise_blur_sigma_max"]))
+        noise_dic['BlurNoise_blur_kernel_size'] = random.choice(
+            np.arange(float(ranges.loc["BlurNoise_blur_kernel_size_min"]),
+                      float(ranges.loc["BlurNoise_blur_kernel_size_max"]), 2))
     else:
         noise_dic['BlurNoise'] = 0
         noise_dic['BlurNoise_blur_sigma'] = 0
@@ -345,19 +364,19 @@ def create_noise_dictionary(img_shape):
     r = random.randint(0, 3)
     selected_directions = random.choices(['pitch', 'yaw', 'roll'], k=r)
     if 'pitch' in selected_directions:
-        noise_dic['pitch'] = np.random.randint(0, 90)
+        noise_dic['pitch'] = np.random.randint(float(ranges.loc["pitch_min"]), float(ranges.loc["pitch_max"]))
     else:
         noise_dic['pitch'] = 0
     if 'yaw' in selected_directions:
-        noise_dic['yaw'] = np.random.randint(0, 90)
+        noise_dic['yaw'] = np.random.randint(float(ranges.loc["yaw_min"]), float(ranges.loc["yaw_max"]))
     else:
         noise_dic['yaw'] = 0
     if 'roll' in selected_directions:
-        noise_dic['roll'] = np.random.randint(0, 90)
+        noise_dic['roll'] = np.random.randint(float(ranges.loc["roll_min"]), float(ranges.loc["roll_max"]))
     else:
         noise_dic['roll'] = 0
 
-    noise_dic['scale'] = random.uniform(0.5, 1)
+    noise_dic['scale'] = random.uniform(float(ranges.loc["scale_min"]), float(ranges.loc["scale_max"]))
     return noise_dic
 
 
@@ -478,6 +497,8 @@ def visualization(main_image, images=None, boxes=None, waitKey=0):
         for box in boxes:
             x, y, w, h = box
             cv2.rectangle(main_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    # cv2.line(main_image, (0, 100), (200, 0), (0, 0, 255), 2)
+    # cv2.line(main_image, (200, 0), (400, 100), (0, 0, 255), 2)
     cv2.imshow('main', main_image)
     if images is not None:
         for i, img in enumerate(images):

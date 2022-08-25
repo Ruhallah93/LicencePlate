@@ -10,7 +10,7 @@ package_directory = os.path.dirname(os.path.abspath(__file__))
 parent_path = package_directory[:package_directory.rindex(separetor)] + separetor
 
 
-def get_new_plate(img_size,
+def get_new_plate(img_size, noise_dic,
                   plate_size=(600, 132),
                   paste_point=(0, 0),
                   mask_state='grayscale',
@@ -18,6 +18,7 @@ def get_new_plate(img_size,
                   background_path="r"):
     """
         img_size: size of whole image,
+        noise_dic: a dictionary containing noise values
         rotation_maximums: maximum degrees of rotation in perspective task,
         plate_size: plate's size in the image,
         attach_point: where the plate pastes to image,
@@ -53,9 +54,8 @@ def get_new_plate(img_size,
     new_plate_2 = new_plate.resize(plate_size, Image.ANTIALIAS)
     mask = mask.resize(plate_size, Image.ANTIALIAS)
 
-    noise_dic = create_noise_dictionary(plate_size)
     noises = create_noise_sequence(plate_size, noise_dic)
-    print(noise_dic)
+    # print(noise_dic)
     # Add noise to plate
     # noise_set1, noise_set2, noise_set3 = create_noise_palettes(plate_size)
     # r = random.randint(0, 3)

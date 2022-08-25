@@ -13,7 +13,6 @@ from datetime import datetime
 from utils.Creator import get_new_plate
 import time
 import numpy as np
-from csv import DictWriter
 
 
 def adjust_plate_and_mask_size(perspective_plate, mask, img_size):
@@ -26,7 +25,7 @@ def adjust_plate_and_mask_size(perspective_plate, mask, img_size):
     return perspective_plate, mask
 
 
-def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size, name,
+def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size,
                  glyph_state='grayscale', save_mode="alphabet+digit"):
     store_directory = store_address + "glyphs" + os.sep if opt.save_bounding_boxes & opt.save_glyphs else store_address
     if not os.path.exists(store_directory):
@@ -54,7 +53,7 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
         if glyph_state == 'grayscale':
             w_background = w_background.convert("L")
         _id = uuid.uuid4().__str__()
-        cv2.imwrite(store_directory + char + os.sep + name + '$' + _id + ".png", np.array(w_background))
+        cv2.imwrite(store_directory + char + os.sep + _id + ".png", np.array(w_background))
 
 
 def save_bounding_boxes_(store_directory, plate, perspective_plate, bonding_boxes, name, _id):
@@ -71,22 +70,15 @@ def save_bounding_boxes_(store_directory, plate, perspective_plate, bonding_boxe
 
 
 def generate_and_save_plates(store_address, cars,
-                             dataset_size: int = 200,
-                             img_size: tuple = (600, 400),
-                             save_plate=True,
-                             save_bounding_boxes=True,
-                             save_mask=True,
-                             save_glyphs=True,
-                             glyph_size: tuple = (128, 128),
-                             mask_state='grayscale',
-                             crop_to_content=False,
-                             glyph_state='grayscale',
-                             save_glyph_mode='alphabet+digit',
-                             sampling=False):
+                             dataset_size: int = 200, img_size: tuple = (600, 400),
+                             save_plate=True, save_bounding_boxes=True,
+                             save_mask=True, save_glyphs=True, glyph_size: tuple = (128, 128),
+                             mask_state='grayscale', crop_to_content=False,
+                             glyph_state='grayscale', save_glyph_mode='alphabet+digit'):
     random.seed(datetime.now())
 
-    # rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [30], 'pitch+yaw': [30, 30],
-    #                      'pitch+yaw+roll': [30, 30, 15]}
+    rotation_maximums = {'pitch': [30], 'yaw': [30], 'roll': [30], 'pitch+yaw': [30, 30],
+                         'pitch+yaw+roll': [30, 30, 15]}
 
     counter = 0
     for i in range(dataset_size):
@@ -98,10 +90,11 @@ def generate_and_save_plates(store_address, cars,
             [x for x in os.listdir(cars) if os.path.isfile(os.path.join(cars, x))])
         car_path = cars + os.sep + postfix_path
 
-        plate, perspective_plate, mask, bonding_boxes, plate_box, noises = get_new_plate(img_size,
-                                                                                         mask_state=mask_state,
-                                                                                         paste_point=attach_point,
-                                                                                         background_path=car_path)
+        plate, perspective_plate, mask, bonding_boxes, plate_box = get_new_plate(img_size,
+                                                                                 mask_state=mask_state,
+                                                                                 rotation_maximums=rotation_maximums,
+                                                                                 paste_point=attach_point,
+                                                                                 background_path=car_path)
         # Keep only plate
         if crop_to_content:
             perspective_plate, mask, plate_box, bonding_boxes = crop(perspective_plate, mask, plate_box, bonding_boxes)
@@ -127,35 +120,20 @@ def generate_and_save_plates(store_address, cars,
                 visualization(perspective_plate, [mask], boxes=bonding_boxes + [plate_box], waitKey=500)
                 continue
 
+            # Save Glyphs
+            if save_glyphs:
+                save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_size,
+                             glyph_state=glyph_state,
+                             save_mode=save_glyph_mode)
+
         # Visualization
-        k = visualization(perspective_plate, [mask], waitKey=0)
-        # t : 116
+        visualization(perspective_plate, [mask], waitKey=0)
 
         _id = uuid.uuid4().__str__()
         name = plate[0] + plate[1] + '_' + plate[2] + '_' + plate[3] + plate[4] + plate[5] + plate[6] + plate[7]
 
-        base_address = store_address + os.sep if store_address[-1] != os.sep else store_address
-        if not os.path.exists(base_address):
-            os.makedirs(base_address)
-
-        # Save noise
-        if k == 116:
-            noises['label'] = 'Correct'
-        else:
-            noises['label'] = 'Corrupt'
-        noises['istance_name'] = name + '$' + _id
-        with open(base_address + 'noise_vectors.csv', 'a') as f:
-            w = DictWriter(f, fieldnames=list(noises.keys()))
-            if f.tell() == 0:
-                w.writeheader()
-            w.writerow(noises)
-            f.close()
-
-        # Update Store Directory
-        if sampling:
-            base_address = base_address + noises['label'] + os.sep
-
-        store_directory = base_address + "images" + os.sep if save_mask else base_address
+        store_address = store_address + os.sep if store_address[-1] != os.sep else store_address
+        store_directory = store_address + "images" + os.sep if save_mask else store_address
         if not os.path.exists(store_directory):
             os.makedirs(store_directory)
 
@@ -163,20 +141,13 @@ def generate_and_save_plates(store_address, cars,
         if save_bounding_boxes:
             save_bounding_boxes_(store_directory, plate, perspective_plate, bonding_boxes, name, _id)
 
-        # Save Glyphs
-        if save_glyphs:
-            save_glyphs_(base_address, plate, perspective_plate, bonding_boxes, glyph_size,
-                         glyph_state=glyph_state,
-                         save_mode=save_glyph_mode,
-                         name=name)
-
         # Save plates
         if save_plate:
             cv2.imwrite(store_directory + name + '$' + _id + ".png", np.array(perspective_plate))
 
         # Save masks
         if save_mask:
-            store_directory = base_address + "masks" + os.sep
+            store_directory = store_address + "masks" + os.sep
             if not os.path.exists(store_directory):
                 os.makedirs(store_directory)
             cv2.imwrite(store_directory + name + '$' + _id + ".png", np.array(mask))
@@ -187,7 +158,7 @@ def generate_and_save_plates(store_address, cars,
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=200, help='number of plates to generate')
+    parser.add_argument('--size', type=int, default=1000, help='number of plates to generate')
     parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 800], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
@@ -199,32 +170,30 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/sara/', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/unet6', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
-    parser.add_argument('--sampling', action='store_true', help='save the masks if true')
     opt = parser.parse_args()
 
-    opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
-    opt.save_glyphs = True
-    opt.crop_to_content = True
-    opt.sampling = True
-    opt.mask_state = "grayscale"
+    # opt.save_plate = True
+    # opt.save_mask = True
+    # opt.save_bounding_boxes = True
+    # opt.save_glyphs = True
+    # opt.crop_to_content = True
+    # opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
-    # directory = address + "images" + os.sep if opt.save_mask else address
-    #
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-    #
-    # directory = address + "masks" + os.sep if opt.save_mask else address
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-    #
-    # directory = address + "glyphs" + os.sep if opt.save_bounding_boxes & opt.save_glyphs else address
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
+    directory = address + "images" + os.sep if opt.save_mask else address
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    directory = address + "masks" + os.sep if opt.save_mask else address
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    directory = address + "glyphs" + os.sep if opt.save_bounding_boxes & opt.save_glyphs else address
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     size = opt.size
     max_threads = opt.workers
@@ -237,7 +206,7 @@ if __name__ == '__main__':
                                                           opt.save_plate, opt.save_bounding_boxes,
                                                           opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
                                                           opt.mask_state, opt.crop_to_content,
-                                                          opt.glyph_state, opt.save_glyph_mode, opt.sampling))
+                                                          opt.glyph_state, opt.save_glyph_mode))
         t.start()
         threadList.append(t)
         if i == 0:
