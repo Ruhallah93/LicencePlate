@@ -1,12 +1,12 @@
 import numpy as np
 
-from utils._metric_tensor import (NearestNeighborsWithMetricTensor,
+from ImageFiltering.utils._metric_tensor import (NearestNeighborsWithMetricTensor,
                                   pairwise_distances_mahalanobis)
-from utils._OverSampling import OverSampling
-from utils._SMOTE import SMOTE
-from utils._ADASYN import ADASYN
+from ImageFiltering.utils._OverSampling import OverSampling
+from ImageFiltering.utils._SMOTE import SMOTE
+from ImageFiltering.utils._ADASYN import ADASYN
 
-from utils._logger import logger
+from ImageFiltering.utils._logger import logger
 _logger= logger
 
 __all__= ['NEATER']

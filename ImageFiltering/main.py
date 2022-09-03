@@ -2,7 +2,6 @@ from utils.NEATER import NEATER
 from utils.Reader import Reader
 from utils.Writer import Writer
 import matplotlib.pyplot as plt
-import imbalanced_databases as imbd
 import numpy as np
 from sklearn.manifold import TSNE
 from utils.Test import Test

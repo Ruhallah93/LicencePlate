@@ -2,9 +2,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 import numpy as np
-from utils.NEATER import NEATER
-from utils.Reader import Reader
-from utils.Writer import Writer
+from NEATER import NEATER
+from ImageFiltering.utils.Reader import Reader
+from ImageFiltering.utils.Writer import Writer
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.svm import SVC
