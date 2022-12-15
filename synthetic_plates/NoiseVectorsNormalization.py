@@ -20,7 +20,8 @@ def transform_back(X, min, max):
 
 for i in range(1, 11):
     nvs['image_' + str(i)] = nvs['image_' + str(i)].astype(np.float16)
-    nvs['image_' + str(i)] = transform(nvs['image_' + str(i)], float(ranges.loc["image_min"]), float(ranges.loc["image_max"]))
+    nvs['image_' + str(i)] = transform(nvs['image_' + str(i)], float(ranges.loc["image_min"]),
+                                       float(ranges.loc["image_max"]))
 
 nvs['LightNoise'] = nvs['LightNoise'].astype(np.float16)
 nvs['LightNoise'] = transform(nvs['LightNoise'], float(ranges.loc["LightNoise_min"]),

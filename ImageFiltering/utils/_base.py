@@ -1,16 +1,17 @@
-
 import numpy as np
 
 import itertools
 
 from ._logger import logger
+
 _logger = logger
 
-__all__= ['mode',
-          'StatisticsMixin',
-          'RandomStateMixin',
-          'ParameterCheckingMixin',
-          'ParameterCombinationsMixin']
+__all__ = ['mode',
+           'StatisticsMixin',
+           'RandomStateMixin',
+           'ParameterCheckingMixin',
+           'ParameterCombinationsMixin']
+
 
 def mode(data):
     """
@@ -24,6 +25,7 @@ def mode(data):
     """
     values, counts = np.unique(data, return_counts=True)
     return values[np.where(counts == max(counts))[0][0]]
+
 
 class StatisticsMixin:
     """

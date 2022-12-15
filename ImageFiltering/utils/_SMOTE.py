@@ -1,15 +1,17 @@
 import numpy as np
 
 from ._metric_tensor import (NearestNeighborsWithMetricTensor,
-                                                            MetricTensor, generate_samples,
-                                                            AdditionalItems)
+                             MetricTensor, generate_samples,
+                             AdditionalItems)
 from sklearn.neighbors import NearestNeighbors
 
 from ._OverSampling import OverSampling
 from ._logger import logger
-_logger= logger
 
-__all__= ['SMOTE']
+_logger = logger
+
+__all__ = ['SMOTE']
+
 
 class SMOTE(OverSampling):
     """
@@ -65,7 +67,7 @@ class SMOTE(OverSampling):
 
         self.proportion = proportion
         self.n_neighbors = n_neighbors
-        self.nn_params= nn_params
+        self.nn_params = nn_params
         self.n_jobs = n_jobs
 
         self.set_random_state(random_state)
@@ -115,16 +117,16 @@ class SMOTE(OverSampling):
         X_min = X[y == self.min_label]
 
         # fitting the model
-        n_neighbors = min([len(X_min), self.n_neighbors+1])
+        n_neighbors = min([len(X_min), self.n_neighbors + 1])
 
-        nn_params= {**self.nn_params}
-        nn_params['metric_tensor']= self.metric_tensor_from_nn_params(nn_params, X, y)
+        nn_params = {**self.nn_params}
+        nn_params['metric_tensor'] = self.metric_tensor_from_nn_params(nn_params, X, y)
 
-        nn= NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors, 
-                                                n_jobs=self.n_jobs, 
-                                                **nn_params)
+        nn = NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors,
+                                              n_jobs=self.n_jobs,
+                                              **nn_params)
         nn.fit(X_min)
-        ind= nn.kneighbors(X_min, return_distance=False)
+        ind = nn.kneighbors(X_min, return_distance=False)
 
         if n_to_sample == 0:
             return X.copy(), y.copy()
@@ -137,12 +139,12 @@ class SMOTE(OverSampling):
 
         X_base = X_min[base_indices]
         X_neighbors = X_min[ind[base_indices, neighbor_indices]]
-        random_offsets= self.random_state.rand(n_to_sample)
+        random_offsets = self.random_state.rand(n_to_sample)
 
-        samples= X_base + random_offsets[:,None]*(X_neighbors - X_base)
-        
+        samples = X_base + random_offsets[:, None] * (X_neighbors - X_base)
+
         return (np.vstack([X, samples]),
-                np.hstack([y, np.hstack([self.min_label]*n_to_sample)]))
+                np.hstack([y, np.hstack([self.min_label] * n_to_sample)]))
 
     def get_params(self, deep=False):
         """

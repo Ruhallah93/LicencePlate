@@ -1,15 +1,17 @@
 import numpy as np
 
 from ImageFiltering.utils._metric_tensor import (NearestNeighborsWithMetricTensor,
-                                  pairwise_distances_mahalanobis)
+                                                 pairwise_distances_mahalanobis)
 from ImageFiltering.utils._OverSampling import OverSampling
 from ImageFiltering.utils._SMOTE import SMOTE
 from ImageFiltering.utils._ADASYN import ADASYN
 
 from ImageFiltering.utils._logger import logger
-_logger= logger
 
-__all__= ['NEATER']
+_logger = logger
+
+__all__ = ['NEATER']
+
 
 class NEATER(OverSampling):
     """
@@ -116,7 +118,7 @@ class NEATER(OverSampling):
     #                               'h': [20]}
     #     return cls.generate_parameter_combinations(parameter_combinations, raw)
 
-    def sample(self, X, y , X_test , y_test, data_produced):
+    def sample(self, X, y, X_test, y_test, data_produced):
         """
         Does the sample generation according to the class parameters.
 
@@ -139,8 +141,8 @@ class NEATER(OverSampling):
         if not self.check_enough_min_samples_for_sampling():
             return X.copy(), y.copy()
 
-        nn_params= {**self.nn_params}
-        nn_params['metric_tensor']= self.metric_tensor_from_nn_params(nn_params, X, y)
+        nn_params = {**self.nn_params}
+        nn_params['metric_tensor'] = self.metric_tensor_from_nn_params(nn_params, X, y)
 
         if data_produced == 1:
 
@@ -175,7 +177,7 @@ class NEATER(OverSampling):
 
         # binary indicator indicating synthetic instances
         synthetic = np.hstack(
-            [np.array([False]*len(X)), np.array([True]*len(X_syn))])
+            [np.array([False] * len(X)), np.array([True] * len(X_syn))])
 
         # initializing strategy probabilities
         prob = np.zeros(shape=(len(X_all), 2))
@@ -189,8 +191,8 @@ class NEATER(OverSampling):
         # Finding nearest neighbors, +1 as X_syn is part of X_all and nearest
         # neighbors will be themselves
         nn = NearestNeighborsWithMetricTensor(n_neighbors=self.b + 1,
-                                                n_jobs=self.n_jobs,
-                                                **nn_params)
+                                              n_jobs=self.n_jobs,
+                                              **nn_params)
         nn.fit(X_all)
         indices = nn.kneighbors(X_syn, return_distance=False)
 
@@ -199,32 +201,33 @@ class NEATER(OverSampling):
                                             X_syn,
                                             nn_params.get('metric_tensor', None))
         dm[dm == 0] = 1e-8
-        dm = 1/dm
-       # dm[dm > self.alpha] = self.alpha
+        dm = 1 / dm
+
+        # dm[dm > self.alpha] = self.alpha
 
         def wprob_mixed(prob, i):
             ind = indices[i][1:]
             a_11 = dm[i, ind]
-           # term_0 = np.multiply(a_11 * prob[i][0] * prob[ind, 0],  np.maximum(1-prob[ind , 0],0.1))
+            # term_0 = np.multiply(a_11 * prob[i][0] * prob[ind, 0],  np.maximum(1-prob[ind , 0],0.1))
             term_0 = a_11 * prob[i][0] * prob[ind, 0]
             term_1 = 0 * (prob[i][1] * prob[ind, 0] +
-                                   prob[i][0] * prob[ind, 1])
+                          prob[i][0] * prob[ind, 1])
             term_2 = a_11 * prob[i][1] * prob[ind, 1]
             return np.sum(term_0 + term_1 + term_2)
 
         def wprob_min(prob, i):
 
-            term_0 = 0*prob[indices[i][1:], 0]
-            term_1 = 0*(1*prob[indices[i][1:], 0] +
-                                            0*prob[indices[i][1:], 1])
-            term_2 = dm[i, indices[i][1:]] *prob[indices[i][1:], 1]
+            term_0 = 0 * prob[indices[i][1:], 0]
+            term_1 = 0 * (1 * prob[indices[i][1:], 0] +
+                          0 * prob[indices[i][1:], 1])
+            term_2 = dm[i, indices[i][1:]] * prob[indices[i][1:], 1]
             return np.sum(term_0 + term_1 + term_2)
 
         def wprob_maj(prob, i):
-            term_0 = dm[i, indices[i][1:]]*prob[indices[i][1:], 0]
-            term_1 = 0*(0*prob[indices[i][1:], 0] +
-                                            1*prob[indices[i][1:], 1])
-            term_2 = 0*prob[indices[i][1:], 1]
+            term_0 = dm[i, indices[i][1:]] * prob[indices[i][1:], 0]
+            term_1 = 0 * (0 * prob[indices[i][1:], 0] +
+                          1 * prob[indices[i][1:], 1])
+            term_2 = 0 * prob[indices[i][1:], 1]
             return np.sum(term_0 + term_1 + term_2)
 
         def utilities(prob):
@@ -242,13 +245,13 @@ class NEATER(OverSampling):
 
             domain = range(len(X_syn))
             util_mixed = np.array([wprob_mixed(prob, i) for i in domain])
-            util_mixed = np.hstack([np.array([0]*len(X)), util_mixed])
+            util_mixed = np.hstack([np.array([0] * len(X)), util_mixed])
 
             util_min = np.array([wprob_min(prob, i) for i in domain])
-            util_min = np.hstack([np.array([0]*len(X)), util_min])
+            util_min = np.hstack([np.array([0] * len(X)), util_min])
 
             util_maj = np.array([wprob_maj(prob, i) for i in domain])
-            util_maj = np.hstack([np.array([0]*len(X)), util_maj])
+            util_maj = np.hstack([np.array([0] * len(X)), util_maj])
 
             return util_mixed, util_min, util_maj
 
@@ -268,17 +271,17 @@ class NEATER(OverSampling):
 
             prob_new = prob.copy()
             synthetic_values = prob[:, 1] * \
-                (alpha + util_min)/(alpha + util_mixed)
+                               (alpha + util_min) / (alpha + util_mixed)
             prob_new[:, 1] = np.where(synthetic, synthetic_values, prob[:, 1])
 
             synthetic_values = prob[:, 0] * \
-                (alpha + util_maj)/(alpha + util_mixed)
+                               (alpha + util_maj) / (alpha + util_mixed)
             prob_new[:, 0] = np.where(synthetic, synthetic_values, prob[:, 0])
 
             norm_factor = np.sum(prob_new, axis=1)
 
-            prob_new[:, 0] = prob_new[:, 0]/norm_factor
-            prob_new[:, 1] = prob_new[:, 1]/norm_factor
+            prob_new[:, 0] = prob_new[:, 0] / norm_factor
+            prob_new[:, 1] = prob_new[:, 1] / norm_factor
 
             return prob_new
 

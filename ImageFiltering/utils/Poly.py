@@ -4,9 +4,11 @@ from ._OverSampling import OverSampling
 from ._SMOTE import SMOTE
 
 from ._logger import logger
-_logger= logger
 
-__all__= ['Poly']
+_logger = logger
+
+__all__ = ['Poly']
+
 
 class Poly(OverSampling):
     """
@@ -82,7 +84,7 @@ class Poly(OverSampling):
 
         self.set_random_state(random_state)
 
-    @ classmethod
+    @classmethod
     def parameter_combinations(cls, raw=False):
         """
         Generates reasonable parameter combinations.
@@ -129,34 +131,34 @@ class Poly(OverSampling):
         if self.topology == 'star':
             # Implementation of the star topology
             X_mean = np.mean(X_min, axis=0)
-            k = max([1, int(np.rint(n_to_sample/len(X_min)))])
+            k = max([1, int(np.rint(n_to_sample / len(X_min)))])
             for x in X_min:
                 diff = X_mean - x
-                for i in range(1, k+1):
-                    samples.append(x + float(i)/(k+1)*diff)
+                for i in range(1, k + 1):
+                    samples.append(x + float(i) / (k + 1) * diff)
         elif self.topology == 'bus':
             # Implementation of the bus topology
-            k = max([1, int(np.rint(n_to_sample/len(X_min)))])
+            k = max([1, int(np.rint(n_to_sample / len(X_min)))])
             for i in range(1, len(X_min)):
-                diff = X_min[i-1] - X_min[i]
-                for j in range(1, k+1):
-                    samples.append(X_min[i] + float(j)/(k+1)*diff)
+                diff = X_min[i - 1] - X_min[i]
+                for j in range(1, k + 1):
+                    samples.append(X_min[i] + float(j) / (k + 1) * diff)
         elif self.topology == 'mesh':
             # Implementation of the mesh topology
-            if len(X_min)**2 > n_to_sample:
+            if len(X_min) ** 2 > n_to_sample:
                 while len(samples) < n_to_sample:
                     random_i = self.random_state.randint(len(X_min))
                     random_j = self.random_state.randint(len(X_min))
                     diff = X_min[random_i] - X_min[random_j]
-                    samples.append(X_min[random_i] + 0.5*diff)
+                    samples.append(X_min[random_i] + 0.5 * diff)
             else:
-                n_combs = (len(X_min)*(len(X_min)-1)/2)
-                k = max([1, int(np.rint(n_to_sample/n_combs))])
+                n_combs = (len(X_min) * (len(X_min) - 1) / 2)
+                k = max([1, int(np.rint(n_to_sample / n_combs))])
                 for i in range(len(X_min)):
                     for j in range(len(X_min)):
                         diff = X_min[i] - X_min[j]
-                        for li in range(1, k+1):
-                            samples.append(X_min[j] + float(li)/(k+1)*diff)
+                        for li in range(1, k + 1):
+                            samples.append(X_min[j] + float(li) / (k + 1) * diff)
         elif self.topology.startswith('poly'):
             # Implementation of the polynomial topology
             deg = int(self.topology.split('_')[1])
@@ -169,7 +171,7 @@ class Poly(OverSampling):
             polys = [fit_poly(d) for d in range(dim)]
 
             for d in range(dim):
-                random_sample = self.random_state.random_sample()*len(X_min)
+                random_sample = self.random_state.random_sample() * len(X_min)
                 samples_gen = [polys[d](random_sample)
                                for _ in range(n_to_sample)]
                 samples.append(np.array(samples_gen))

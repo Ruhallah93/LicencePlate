@@ -1,8 +1,11 @@
 import csv
 import numpy as np
+
+
 class Reader:
-    def __init__(self , fileName):
+    def __init__(self, fileName):
         self.fileName = fileName
+
     def construct(self):
         file = open(self.fileName)
         csvreader = csv.reader(file)
@@ -23,4 +26,4 @@ class Reader:
             y.append(row[-1])
         X = np.asarray(X)
         y = np.asarray(y)
-        return X , y , header
+        return X, y, header

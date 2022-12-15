@@ -4,9 +4,11 @@ from ._base import (StatisticsMixin, ParameterCheckingMixin,
                     ParameterCombinationsMixin, RandomStateMixin)
 from ._metric_tensor import MetricLearningMixin
 from ._logger import logger
+
 _logger = logger
 
-__all__= ['OverSampling']
+__all__ = ['OverSampling']
+
 
 class OverSampling(StatisticsMixin,
                    ParameterCheckingMixin,
@@ -51,7 +53,7 @@ class OverSampling(StatisticsMixin,
                                     of the majority class
         """
         if isinstance(strategy, float) or isinstance(strategy, int):
-            return max([0, abs(int((n_maj - n_min)*strategy))])
+            return max([0, abs(int((n_maj - n_min) * strategy))])
         else:
             m = "Value %s for parameter strategy is not supported" % strategy
             raise ValueError(self.__class__.__name__ + ": " + m)
@@ -65,7 +67,7 @@ class OverSampling(StatisticsMixin,
         Returns:
             np.array: the new sample
         """
-        return x + (y - x)*self.random_state.random_sample()
+        return x + (y - x) * self.random_state.random_sample()
 
     def sample_between_points_componentwise(self, x, y, mask=None):
         """
@@ -79,9 +81,9 @@ class OverSampling(StatisticsMixin,
             np.array: the new sample being generated
         """
         if mask is None:
-            return x + (y - x)*self.random_state.random_sample()
+            return x + (y - x) * self.random_state.random_sample()
         else:
-            return x + (y - x)*self.random_state.random_sample()*mask
+            return x + (y - x) * self.random_state.random_sample() * mask
 
     def sample_by_jittering(self, x, std):
         """
@@ -92,7 +94,7 @@ class OverSampling(StatisticsMixin,
         Returns:
             np.array: the new sample
         """
-        return x + (self.random_state.random_sample() - 0.5)*2.0*std
+        return x + (self.random_state.random_sample() - 0.5) * 2.0 * std
 
     def sample_by_jittering_componentwise(self, x, std):
         """
@@ -103,7 +105,7 @@ class OverSampling(StatisticsMixin,
         Returns:
             np.array: the new sample
         """
-        return x + (self.random_state.random_sample(len(x))-0.5)*2.0 * std
+        return x + (self.random_state.random_sample(len(x)) - 0.5) * 2.0 * std
 
     def sample_by_gaussian_jittering(self, x, std):
         """
@@ -116,7 +118,7 @@ class OverSampling(StatisticsMixin,
         """
         return self.random_state.normal(x, std)
 
-    def sample(self, X, y , X_train , y_train, data_produced):
+    def sample(self, X, y, X_train, y_train, data_produced):
         """
         The samplig function reimplemented in child classes
         Args:

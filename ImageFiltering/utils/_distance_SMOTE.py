@@ -5,9 +5,11 @@ from ._OverSampling import OverSampling
 from ._SMOTE import SMOTE
 
 from ._logger import logger
-_logger= logger
 
-__all__= ['distance_SMOTE']
+_logger = logger
+
+__all__ = ['distance_SMOTE']
+
 
 class distance_SMOTE(OverSampling):
     """
@@ -73,7 +75,7 @@ class distance_SMOTE(OverSampling):
 
         self.set_random_state(random_state)
 
-    @ classmethod
+    @classmethod
     def parameter_combinations(cls, raw=False):
         """
         Generates reasonable parameter combinations.
@@ -118,14 +120,14 @@ class distance_SMOTE(OverSampling):
         # extracting minority samples
         X_min = X[y == self.min_label]
 
-        nn_params= {**self.nn_params}
-        nn_params['metric_tensor']= self.metric_tensor_from_nn_params(nn_params, X, y)
+        nn_params = {**self.nn_params}
+        nn_params['metric_tensor'] = self.metric_tensor_from_nn_params(nn_params, X, y)
 
         # fitting the model
-        n_neighbors = min([len(X_min), self.n_neighbors+1])
-        nn= NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors, 
-                                                n_jobs=self.n_jobs, 
-                                                **(nn_params))
+        n_neighbors = min([len(X_min), self.n_neighbors + 1])
+        nn = NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors,
+                                              n_jobs=self.n_jobs,
+                                              **(nn_params))
         nn.fit(X_min)
         ind = nn.kneighbors(X_min, return_distance=False)
 
@@ -148,4 +150,3 @@ class distance_SMOTE(OverSampling):
                 'nn_params': self.nn_params,
                 'n_jobs': self.n_jobs,
                 'random_state': self._random_state_init}
-

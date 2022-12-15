@@ -1,6 +1,6 @@
 import logging
 
-all= ['logger']
+all = ['logger']
 
 # setting the _logger format
 logger = logging.getLogger('smote_variants')

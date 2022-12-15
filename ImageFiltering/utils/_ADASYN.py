@@ -1,14 +1,15 @@
 import numpy as np
 
-from ._metric_tensor import (NearestNeighborsWithMetricTensor,
-                                                            MetricTensor)
+from ._metric_tensor import (NearestNeighborsWithMetricTensor, MetricTensor)
 from ._OverSampling import OverSampling
 from ._SMOTE import SMOTE
 
 from ._logger import logger
-_logger= logger
 
-__all__= ['ADASYN']
+_logger = logger
+
+__all__ = ['ADASYN']
+
 
 class ADASYN(OverSampling):
     """
@@ -115,25 +116,25 @@ class ADASYN(OverSampling):
         m_min = len(X_min)
         m_maj = len(X) - m_min
 
-        n_to_sample = (m_maj - m_min)*self.beta
+        n_to_sample = (m_maj - m_min) * self.beta
 
         if n_to_sample == 0:
             _logger.warning(self.__class__.__name__ +
                             ": " + "Sampling is not needed")
             return X.copy(), y.copy()
 
-        d = float(m_min)/m_maj
+        d = float(m_min) / m_maj
         if d > self.d_th:
             return X.copy(), y.copy()
 
-        nn_params= {**self.nn_params}
-        nn_params['metric_tensor']= self.metric_tensor_from_nn_params(nn_params, X, y)
+        nn_params = {**self.nn_params}
+        nn_params['metric_tensor'] = self.metric_tensor_from_nn_params(nn_params, X, y)
 
         # fitting nearest neighbors model to all samples
-        n_neighbors = min([len(X_min), self.n_neighbors+1])
-        nn= NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors, 
-                                                n_jobs=self.n_jobs, 
-                                                **nn_params)
+        n_neighbors = min([len(X_min), self.n_neighbors + 1])
+        nn = NearestNeighborsWithMetricTensor(n_neighbors=n_neighbors,
+                                              n_jobs=self.n_jobs,
+                                              **nn_params)
         nn.fit(X)
         indices = nn.kneighbors(X_min, return_distance=False)
 
@@ -141,10 +142,10 @@ class ADASYN(OverSampling):
         r = []
         for i in range(len(indices)):
             r.append(sum(y[indices[i][1:]] ==
-                         self.maj_label)/self.n_neighbors)
+                         self.maj_label) / self.n_neighbors)
         r = np.array(r)
         if sum(r) > 0:
-            r = r/sum(r)
+            r = r / sum(r)
 
         if any(np.isnan(r)) or sum(r) == 0:
             _logger.warning(self.__class__.__name__ + ": " +
@@ -153,9 +154,9 @@ class ADASYN(OverSampling):
 
         # fitting nearest neighbors models to minority samples
         n_neigh = min([len(X_min), self.n_neighbors + 1])
-        nn= NearestNeighborsWithMetricTensor(n_neighbors=n_neigh, 
-                                                        n_jobs=self.n_jobs, 
-                                                        **nn_params)
+        nn = NearestNeighborsWithMetricTensor(n_neighbors=n_neigh,
+                                              n_jobs=self.n_jobs,
+                                              **nn_params)
         nn.fit(X_min)
         indices = nn.kneighbors(X_min, return_distance=False)
 
@@ -173,7 +174,7 @@ class ADASYN(OverSampling):
         samples = X_base + np.multiply(r, diff)
 
         return (np.vstack([X, samples]),
-                np.hstack([y, np.hstack([self.min_label]*int(n_to_sample))]))
+                np.hstack([y, np.hstack([self.min_label] * int(n_to_sample))]))
 
     def get_params(self, deep=False):
         """
