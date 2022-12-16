@@ -226,14 +226,14 @@ if __name__ == '__main__':
     parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
     opt = parser.parse_args()
 
-    # opt.save_plate = True
-    # opt.save_mask = True
-    # opt.save_bounding_boxes = True
-    # opt.save_glyphs = True
-    # opt.crop_to_content = True
-    # opt.noise_labeling = False
-    # opt.predefined_noises = True
-    # opt.mask_state = "grayscale"
+    opt.save_plate = True
+    opt.save_mask = True
+    opt.save_bounding_boxes = True
+    opt.save_glyphs = True
+    opt.crop_to_content = True
+    opt.noise_labeling = False
+    opt.predefined_noises = True
+    opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
 
