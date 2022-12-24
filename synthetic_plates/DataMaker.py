@@ -43,7 +43,7 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
     for char in directories:
         if not os.path.exists(store_directory + char + os.sep):
             os.makedirs(store_directory + char + os.sep)
-    bonding_boxes.sort()
+    # bonding_boxes.sort()
     for i, (box, char) in enumerate(zip(bonding_boxes, plate)):
         if save_mode == "alphabet" and i != 2:
             continue
@@ -110,6 +110,7 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
             noise_dic = create_noise_dictionary(noise_ranges)
 
         plate, perspective_plate, mask, bonding_boxes, plate_box, noises = get_new_plate(img_size, noise_dic,
+                                                                                         plate_size=plate_size,
                                                                                          mask_state=mask_state,
                                                                                          paste_point=attach_point,
                                                                                          background_path=car_path)
@@ -135,7 +136,7 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
             if len(bonding_boxes) != 8:
                 counter += 1
                 print("len(merged_boxes): ", len(bonding_boxes))
-                visualization(perspective_plate, [mask], boxes=bonding_boxes + [plate_box], waitKey=500)
+                visualization(perspective_plate, [mask], boxes=bonding_boxes + [plate_box], waitKey=0)
                 continue
 
         # Visualization
@@ -161,7 +162,7 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
                 noises['label'] = 'Corrupt'
         else:
             noises['label'] = 'Unknown'
-        noises['istance_name'] = name + '$' + _id
+        noises['instance_name'] = name + '$' + _id
         with open(base_address + 'noise_vectors.csv', 'a') as f:
             w = DictWriter(f, fieldnames=list(noises.keys()))
             if f.tell() == 0:
@@ -205,8 +206,8 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=100, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=80000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 800], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
@@ -217,18 +218,17 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/test/', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/CapsNet_data/', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     parser.add_argument('--noise_labeling', action='store_true', help='save the masks if true')
     parser.add_argument('--predefined_noises', action='store_true', help='generate random noises. false: read from csv')
-    parser.add_argument('--predefined_noises_file', type=str,
-                        default='utils/noise/denormalized_noise_vectors(weighted).csv')
+    parser.add_argument('--predefined_noises_file', type=str, default='utils/noise/noise_vectors.csv')
     parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
     opt = parser.parse_args()
 
-    opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
+    opt.save_plate = False
+    opt.save_mask = False
+    opt.save_bounding_boxes = False
     opt.save_glyphs = True
     opt.crop_to_content = True
     opt.noise_labeling = False
@@ -240,20 +240,29 @@ if __name__ == '__main__':
     size = opt.size
     max_threads = opt.workers
     threadList = []
-    for i in range(max_threads):
-        print("Tread ", i + 1, " is running")
-        chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
-        t = Thread(target=generate_and_save_plates,
-                   args=(i, address, opt.cars, opt.predefined_noises_file, opt.noise_ranges,
-                         chunk_size, tuple(opt.img_size),
-                         opt.save_plate, opt.save_bounding_boxes,
-                         opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
-                         opt.mask_state, opt.crop_to_content,
-                         opt.glyph_state, opt.save_glyph_mode,
-                         opt.predefined_noises, opt.noise_labeling))
-        t.start()
-        threadList.append(t)
-        if i == 0:
-            time.sleep(4)
-    for t in threadList:
-        t.join()
+    if max_threads == 1:
+        generate_and_save_plates(0, address, opt.cars, opt.predefined_noises_file, opt.noise_ranges,
+                                 size, tuple(opt.img_size),
+                                 opt.save_plate, opt.save_bounding_boxes,
+                                 opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
+                                 opt.mask_state, opt.crop_to_content,
+                                 opt.glyph_state, opt.save_glyph_mode,
+                                 opt.predefined_noises, opt.noise_labeling)
+    else:
+        for i in range(max_threads):
+            print("Tread ", i + 1, " is running")
+            chunk_size = (size // max_threads) if i < max_threads - 1 else (size // max_threads) + (size % max_threads)
+            t = Thread(target=generate_and_save_plates,
+                       args=(i, address, opt.cars, opt.predefined_noises_file, opt.noise_ranges,
+                             chunk_size, tuple(opt.img_size),
+                             opt.save_plate, opt.save_bounding_boxes,
+                             opt.save_mask, opt.save_glyphs, tuple(opt.glyph_size),
+                             opt.mask_state, opt.crop_to_content,
+                             opt.glyph_state, opt.save_glyph_mode,
+                             opt.predefined_noises, opt.noise_labeling))
+            t.start()
+            threadList.append(t)
+            if i == 0:
+                time.sleep(4)
+        for t in threadList:
+            t.join()

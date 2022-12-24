@@ -4,8 +4,8 @@ import os
 
 ranges = pd.read_csv("utils/noise/noises_parameters_ranges.csv")
 ranges.set_index("Name", inplace=True)
-address = "utils/noise/"
-nvs = pd.read_csv(address + "noise_vectors(weighted).csv")
+address = "ImageFiltering/labeled_data/"
+nvs = pd.read_csv(address + "normalized_noise_vectors.csv")
 
 
 def transform_back(X, min, max):
@@ -82,4 +82,4 @@ nvs['roll'] = transform_back(nvs['roll'], float(ranges.loc["roll_min"]), float(r
 nvs['scale'] = nvs['scale'].astype(np.float16)
 nvs['scale'] = transform_back(nvs['scale'], float(ranges.loc["scale_min"]), float(ranges.loc["scale_max"]))
 
-nvs.to_csv(address + "denormalized_noise_vectors(weighted).csv", index=False)
+nvs.to_csv(address + "denormalized_noise_vectors.csv", index=False)

@@ -58,12 +58,20 @@ def get_bounding_boxes(img):
             for j, box2 in enumerate(boundingBoxes):
                 x2, y2, w2, h2 = box2
                 if i != j and ((x2 >= x and x2 + w2 <= x + w) or (x >= x2 and x + w <= x2 + w2)):
+                    left = np.min([x, x2])
+                    right = np.max([x2 + w2, x + w])
+                    x = left
+                    w = right - left
+
                     upper = np.min([y, y2])
                     lower = np.max([y2 + h2, y + h])
                     h = lower - upper
                     y = upper
                     banned.append(j)
             merged_boxes.append([x - 3, y - 3, w + 6, h + 6])
+
+    merged_boxes.sort()
+    # visualization(img, boxes=merged_boxes)
 
     return merged_boxes, boundingBoxes
 

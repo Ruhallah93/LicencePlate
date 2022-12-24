@@ -34,7 +34,7 @@ def train(model, train_directory, valid_directory, image_size, args):
     """
     Training a CapsuleNet
     :param model: the CapsuleNet model
-    :param data: a tuple containing training and testing data, like `((x_train, y_train), (x_test, y_test))`
+    :param no_labels: a tuple containing training and testing no_labels, like `((x_train, y_train), (x_test, y_test))`
     :param args: arguments
     :return: The trained model
     """
@@ -53,12 +53,12 @@ def train(model, train_directory, valid_directory, image_size, args):
                   loss_weights=[1., args.lam_recon])
 
     """
-    # Training without data augmentation:
+    # Training without no_labels augmentation:
     model.fit([x_train, y_train], [y_train, x_train], batch_size=args.batch_size, epochs=args.epochs,
               validation_data=[[x_test, y_test], [y_test, x_test]], callbacks=[log, tb, checkpoint, lr_decay])
     """
 
-    # Begin: Training with data augmentation ---------------------------------------------------------------------#
+    # Begin: Training with no_labels augmentation ---------------------------------------------------------------------#
     def train_generator(directory, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
                                            height_shift_range=shift_fraction)
@@ -76,14 +76,14 @@ def train(model, train_directory, valid_directory, image_size, args):
             x_batch /= 255
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
-    # Training with data augmentation. If shift_fraction=0., also no augmentation.
+    # Training with no_labels augmentation. If shift_fraction=0., also no augmentation.
     model.fit(generator=train_generator(train_directory, args.batch_size, args.shift_fraction),
               steps_per_epoch=int(count_files(train_directory) / args.batch_size),
               epochs=args.epochs,
               validation_data=valid_generator(valid_directory, args.batch_size),
               validation_steps=int(count_files(valid_directory) / args.batch_size),
               callbacks=[log, tb, checkpoint, lr_decay])
-    # End: Training with data augmentation -----------------------------------------------------------------------#
+    # End: Training with no_labels augmentation -----------------------------------------------------------------------#
 
     from utils import plot_log
     plot_log(args.save_dir + '/log.csv', show=True)

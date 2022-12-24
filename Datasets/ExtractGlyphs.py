@@ -70,7 +70,7 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
         if not os.path.exists(store_directory + char + os.sep):
             os.makedirs(store_directory + char + os.sep)
 
-    bonding_boxes.sort()
+    # bonding_boxes.sort()
     for i, (box, char) in enumerate(zip(bonding_boxes, plate)):
         if save_mode == "alphabet" and i != 2:
             continue
@@ -113,7 +113,7 @@ for path in tqdm(glob.glob(dataset_path + "*.txt")):
         boxes[:, 1] -= boxes[:, 3] / 2
         boxes = boxes.astype(np.int).tolist()
 
-    visualization(img, boxes=boxes)
+    # visualization(img, boxes=boxes)
     # save_glyphs_(store_address=save_path,
     #              plate=plate,
     #              perspective_plate=img,

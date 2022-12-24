@@ -68,7 +68,7 @@ def count_files(address):
 def CapsNet(input_shape, n_class, routings, batch_size):
     """
     A Capsule Network on MNIST.
-    :param input_shape: data shape, 3d, [width, height, channels]
+    :param input_shape: no_labels shape, 3d, [width, height, channels]
     :param n_class: number of classes
     :param routings: number of routing iterations
     :param batch_size: size of batch
@@ -133,7 +133,7 @@ def train(model,  # type: models.Model
     """
     Training a CapsuleNet
     :param model: the CapsuleNet model
-    :param data: a tuple containing training and testing data, like `((x_train, y_train), (x_test, y_test))`
+    :param no_labels: a tuple containing training and testing no_labels, like `((x_train, y_train), (x_test, y_test))`
     :param args: arguments
     :return: The trained model
     """
@@ -152,12 +152,12 @@ def train(model,  # type: models.Model
                   metrics={'capsnet': 'accuracy'})
 
     """
-    # Training without data augmentation:
+    # Training without no_labels augmentation:
     model.fit([x_train, y_train], [y_train, x_train], batch_size=args.batch_size, epochs=args.epochs,
               validation_data=[[x_test, y_test], [y_test, x_test]], callbacks=[log, tb, checkpoint, lr_decay])
     """
 
-    # Begin: Training with data augmentation ---------------------------------------------------------------------#
+    # Begin: Training with no_labels augmentation ---------------------------------------------------------------------#
     def train_generator(directory, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
                                            height_shift_range=shift_fraction)
@@ -175,7 +175,7 @@ def train(model,  # type: models.Model
             x_batch /= 255
             yield ([x_batch, y_batch], [y_batch, x_batch])
 
-    # Training with data augmentation. If shift_fraction=0., no augmentation.
+    # Training with no_labels augmentation. If shift_fraction=0., no augmentation.
     # train_generator(train_directory, args.batch_size, args.shift_fraction)
     model.fit(train_generator(train_directory, args.batch_size, args.shift_fraction),
               steps_per_epoch=int(count_files(train_directory) / args.batch_size),
@@ -183,7 +183,7 @@ def train(model,  # type: models.Model
               validation_data=valid_generator(valid_directory, args.batch_size),
               validation_steps=int(count_files(valid_directory) / args.batch_size),
               callbacks=[log, checkpoint, lr_decay])
-    # End: Training with data augmentation -----------------------------------------------------------------------#
+    # End: Training with no_labels augmentation -----------------------------------------------------------------------#
 
     model.save_weights(args.save_dir + '/trained_model.h5')
     print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)

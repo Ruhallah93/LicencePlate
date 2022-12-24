@@ -30,7 +30,7 @@ def get_new_plate(img_size, noise_dic,
 
     # Create a blank image with size of templates
     # and add the template and glyph images
-    new_plate = Image.new('RGBA', (600, 132), (0, 0, 0, 0))
+    new_plate = Image.new('RGBA', plate_size, (0, 0, 0, 0))
     mask = new_plate.copy()
 
     # Get the template associated with the letter plate[2]
