@@ -10,6 +10,9 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from scipy import stats as st
 import pandas as pd
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import accuracy_score
 
 
 class Evaluation:
@@ -117,7 +120,21 @@ class Evaluation:
         print('0 class in train oversampled: %d' % np.sum(y_train == 0))
         print('1 class in train oversampled: %d' % np.sum(y_train == 1))
 
-        neater = NEATER(alpha=0.999999, h=20)
+        # best_recall = 0
+        # best_param = []
+        # for h in range(2, 25):
+        #     for alpha in [1, 0.999999, 0.9, 0.8, 0.5]:
+        #         neater = NEATER(alpha=alpha, h=h)
+        #         X_pred, y_pred = neater.sample(X_train, y_train, self.X_test, self.y_test, data_produced=0)
+        #         r = recall_score(y_true=self.y_test, y_pred=y_pred, average=None)[0]
+        #         print("current recall:", r, "param:", [h, alpha])
+        #         if best_recall < r:
+        #             best_recall = r
+        #             best_param = [h, alpha]
+        # print("best recall:", best_recall)
+        # print("best param:", best_param)
+
+        neater = NEATER(alpha=1, h=2)
         X_pred, y_pred = neater.sample(X_train, y_train, self.X_test, self.y_test, data_produced=0)
 
         # writer = Writer()

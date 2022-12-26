@@ -17,7 +17,7 @@ visualization = False
 test_size = 0.3
 evaluation = Evaluation(test_size, 'train_data/normalized_noise_vectors.csv')
 # ['knn', 'mlp', 'nb', 'neater', 'voting', 'svm', 'rf']
-for method in ['knn', 'mlp', 'nb', 'neater', 'voting', 'svm', 'rf']:
+for method in ['neater', 'voting']:
     precisions = np.empty((0, 2), float)
     recalls = np.empty((0, 2), float)
     accuracies = []

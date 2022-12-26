@@ -206,8 +206,8 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=80000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=10, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=2000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 800], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
@@ -218,20 +218,21 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/CapsNet_data/', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/test_mlp/', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     parser.add_argument('--noise_labeling', action='store_true', help='save the masks if true')
     parser.add_argument('--predefined_noises', action='store_true', help='generate random noises. false: read from csv')
     parser.add_argument('--predefined_noises_file', type=str, default='utils/noise/noise_vectors.csv')
-    parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
+    parser.add_argument('--noise_ranges', type=str,
+                        default='ImageFiltering/labeled_data/mlp/denormalized_noise_vectors.csv')
     opt = parser.parse_args()
 
-    opt.save_plate = False
-    opt.save_mask = False
-    opt.save_bounding_boxes = False
+    opt.save_plate = True
+    opt.save_mask = True
+    opt.save_bounding_boxes = True
     opt.save_glyphs = True
-    opt.crop_to_content = True
-    opt.noise_labeling = False
+    opt.crop_to_content = False
+    opt.noise_labeling = True
     opt.predefined_noises = True
     opt.mask_state = "grayscale"
 

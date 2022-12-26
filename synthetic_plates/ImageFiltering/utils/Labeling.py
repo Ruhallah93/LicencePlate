@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import pandas as pd
+from sklearn.neural_network import MLPClassifier
 from synthetic_plates.ImageFiltering.utils.NEATER import NEATER
 from imblearn.over_sampling import RandomOverSampler
 
@@ -32,7 +33,7 @@ class Labeling:
         train_len = len(self.X)
         itr = math.ceil(len(self.X_no_label) / train_len)
         for i in range(itr):
-            print(i+1, "/", itr)
+            print(i + 1, "/", itr)
             x_n = self.X_no_label[i * train_len:i * train_len + train_len]
             y_n = self.y_no_label[i * train_len:i * train_len + train_len]
 
@@ -41,6 +42,11 @@ class Labeling:
             y_prediction = np.append(np.array(y_prediction), prediction)
 
         return np.array(y_prediction)
+
+    def mlp(self):
+        clf = MLPClassifier(activation='identity', alpha=0.05, hidden_layer_sizes=(500,), learning_rate='adaptive',
+                            max_iter=1000, solver='adam').fit(self.X, self.y)
+        return clf.predict(self.X_no_label)
 
     def run(self, method):
         return self.X_no_label, getattr(self, method)()
