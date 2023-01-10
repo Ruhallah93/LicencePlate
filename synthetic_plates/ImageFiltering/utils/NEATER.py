@@ -8,6 +8,8 @@ from synthetic_plates.ImageFiltering.utils._ADASYN import ADASYN
 
 from synthetic_plates.ImageFiltering.utils._logger import logger
 
+from sklearn.neighbors import DistanceMetric
+
 _logger = logger
 
 __all__ = ['NEATER']
@@ -118,7 +120,7 @@ class NEATER(OverSampling):
     #                               'h': [20]}
     #     return cls.generate_parameter_combinations(parameter_combinations, raw)
 
-    def sample(self, X, y, X_test, y_test, data_produced):
+    def sample(self, X, y, X_test, y_test, data_produced, metric='minkowski'):
         """
         Does the sample generation according to the class parameters.
 
@@ -190,16 +192,26 @@ class NEATER(OverSampling):
 
         # Finding nearest neighbors, +1 as X_syn is part of X_all and nearest
         # neighbors will be themselves
-        nn = NearestNeighborsWithMetricTensor(n_neighbors=self.b + 1,
-                                              n_jobs=self.n_jobs,
-                                              **nn_params)
+        if metric == 'mahalanobis':
+            nn = NearestNeighborsWithMetricTensor(n_neighbors=self.b + 1,
+                                                  n_jobs=self.n_jobs,
+                                                  **nn_params)
+        else:
+            nn = NearestNeighborsWithMetricTensor(n_neighbors=self.b + 1,
+                                                  n_jobs=self.n_jobs,
+                                                  metric=metric,
+                                                  **nn_params)
         nn.fit(X_all)
         indices = nn.kneighbors(X_syn, return_distance=False)
 
         # computing distances
-        dm = pairwise_distances_mahalanobis(X_all,
-                                            X_syn,
-                                            nn_params.get('metric_tensor', None))
+        if metric == 'mahalanobis':
+            dm = pairwise_distances_mahalanobis(X_all,
+                                                X_syn,
+                                                nn_params.get('metric_tensor', None))
+        else:
+            dist = DistanceMetric.get_metric(metric)
+            dm = dist.pairwise(X_syn, X_all)
         dm[dm == 0] = 1e-8
         dm = 1 / dm
 

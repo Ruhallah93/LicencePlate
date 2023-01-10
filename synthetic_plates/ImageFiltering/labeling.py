@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 no_label_data_file = 'no_labels/normalized_noise_vectors.csv'
-evaluation = Labeling(train_data_file='train_data/normalized_noise_vectors.csv',
+evaluation = Labeling(train_data_file='train_data/single_label/normalized_noise_vectors.csv',
                       no_label_data_file=no_label_data_file)
 
 for method in ['mlp']:

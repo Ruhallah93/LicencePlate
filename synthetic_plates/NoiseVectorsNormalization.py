@@ -4,7 +4,7 @@ import os
 
 ranges = pd.read_csv("utils/noise/noises_parameters_ranges.csv")
 ranges.set_index("Name", inplace=True)
-address = "output/sara(train_data)/"
+address = "output/sara(train_dbl_label)/"
 nvs = pd.read_csv(address + "noise_vectors.csv")
 
 

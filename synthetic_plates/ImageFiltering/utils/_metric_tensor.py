@@ -33,10 +33,10 @@ def pairwise_distances_mahalanobis(X, Y=None, tensor=None):
         # tensor[-3, -3] = 1 / 6
         # tensor[-4, -4] = 1 / 6
 
-        tensor[-1, -1] = 1
-        tensor[-2, -2] = ((X.shape[1] - 3) / 3) ** 36
-        tensor[-3, -3] = ((X.shape[1] - 3) / 3) ** 36
-        tensor[-4, -4] = ((X.shape[1] - 3) / 3) ** 36
+        # tensor[-1, -1] = 1
+        # tensor[-2, -2] = ((X.shape[1] - 3) / 3) ** 2
+        # tensor[-3, -3] = ((X.shape[1] - 3) / 3) ** 2
+        # tensor[-4, -4] = ((X.shape[1] - 3) / 3) ** 2
 
         tmp = (X[:, None] - Y)
     return np.sqrt(np.einsum('ijk,ijk -> ij', tmp, np.dot(tmp, tensor)).T)

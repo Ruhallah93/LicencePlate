@@ -48,6 +48,7 @@ def get_new_plate(img_size, noise_dic,
     new_plate, plate_boxes = adjust_glyphs(glyph_images, new_plate)
     mask, mask_boxes = adjust_glyphs(glyph_images_mask, mask)
 
+    # visualization(new_plate)
     # visualization(new_plate, boxes=plate_boxes)
     # visualization(mask, boxes=mask_boxes)
 

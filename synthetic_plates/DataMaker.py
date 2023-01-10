@@ -94,6 +94,7 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
 
     counter = 0
     for i in range(dataset_size):
+        print(i)
         plate_size = (600, 132)
         attach_point = (int((img_size[1] - plate_size[1]) / 2), int((img_size[0] - plate_size[0]) / 2))
 
@@ -140,7 +141,10 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
                 continue
 
         # Visualization
-        # t : 116
+        # q : 113 : noise and rotation are correct
+        # w : 119 : noise is corrupt
+        # e : 101 : rotation is corruptq
+        # r : 114 : noise and rotation are corrupt
         if noise_labeling:
             # print(noises['pred_label'])
             k = visualization(perspective_plate, [mask], waitKey=0)
@@ -156,9 +160,21 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
 
         # Save noise
         if noise_labeling:
-            if k == 116:
+            if k == 113:
+                noises['label_noise'] = 'Correct'
+                noises['label_rotation'] = 'Correct'
                 noises['label'] = 'Correct'
+            elif k == 119:
+                noises['label_noise'] = 'Corrupt'
+                noises['label_rotation'] = 'Correct'
+                noises['label'] = 'Corrupt'
+            elif k == 101:
+                noises['label_noise'] = 'Correct'
+                noises['label_rotation'] = 'Corrupt'
+                noises['label'] = 'Corrupt'
             else:
+                noises['label_noise'] = 'Corrupt'
+                noises['label_rotation'] = 'Corrupt'
                 noises['label'] = 'Corrupt'
         else:
             noises['label'] = 'Unknown'
@@ -218,22 +234,21 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/test_mlp/', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/sara(train_dbl_label)/', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     parser.add_argument('--noise_labeling', action='store_true', help='save the masks if true')
     parser.add_argument('--predefined_noises', action='store_true', help='generate random noises. false: read from csv')
     parser.add_argument('--predefined_noises_file', type=str, default='utils/noise/noise_vectors.csv')
-    parser.add_argument('--noise_ranges', type=str,
-                        default='ImageFiltering/labeled_data/mlp/denormalized_noise_vectors.csv')
+    parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
     opt = parser.parse_args()
 
     opt.save_plate = True
-    opt.save_mask = True
-    opt.save_bounding_boxes = True
-    opt.save_glyphs = True
-    opt.crop_to_content = False
+    opt.save_mask = False
+    opt.save_bounding_boxes = False
+    opt.save_glyphs = False
+    opt.crop_to_content = True
     opt.noise_labeling = True
-    opt.predefined_noises = True
+    opt.predefined_noises = False
     opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address
