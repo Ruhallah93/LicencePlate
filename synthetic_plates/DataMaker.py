@@ -102,9 +102,11 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
         postfix_path = random.choice(
             [x for x in os.listdir(cars) if os.path.isfile(os.path.join(cars, x))])
         car_path = cars + os.sep + postfix_path
+        car_path = "r"
 
         if predefined_noises:
             noise_vectors = pandas.read_csv(predefined_noises_file)
+            noise_vectors = noise_vectors[noise_vectors.label == 1]
             noise_dic = noise_vectors.iloc[thread_num * dataset_size + i].to_dict()
         else:
             # random noises
@@ -222,8 +224,8 @@ def generate_and_save_plates(thread_num, store_address, cars, predefined_noises_
 if __name__ == '__main__':
     # For test: set workers default to 1
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=2000, help='number of plates to generate')
-    parser.add_argument('--workers', type=int, default=1, help='number of threads to run')
+    parser.add_argument('--size', type=int, default=50000, help='number of plates to generate')
+    parser.add_argument('--workers', type=int, default=20, help='number of threads to run')
     parser.add_argument('--img_size', nargs='+', type=int, default=[1000, 800], help='size of background')
     parser.add_argument('--save_plate', action='store_true', help='save the masks if true')
     parser.add_argument('--save_bounding_boxes', action='store_true', help='save the bounding boxes if true')
@@ -234,21 +236,22 @@ if __name__ == '__main__':
     parser.add_argument('--glyph_state', type=str, default='colorful', help='grayscale or colorful')
     parser.add_argument('--save_glyph_mode', type=str, default='alphabet+digit', help='alphabet+digit|alphabet|digit')
     parser.add_argument('--mask_state', type=str, default='grayscale', help='grayscale or colorful')
-    parser.add_argument('--address', type=str, default='output/sara(train_dbl_label)/', help='The address of saving dataset')
+    parser.add_argument('--address', type=str, default='output/nb/', help='The address of saving dataset')
     parser.add_argument('--cars', type=str, default='files/cars')
     parser.add_argument('--noise_labeling', action='store_true', help='save the masks if true')
     parser.add_argument('--predefined_noises', action='store_true', help='generate random noises. false: read from csv')
-    parser.add_argument('--predefined_noises_file', type=str, default='utils/noise/noise_vectors.csv')
+    parser.add_argument('--predefined_noises_file', type=str,
+                        default='ImageFiltering/labeled_data/nb/denormalized_noise_vectors.csv')
     parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
     opt = parser.parse_args()
 
-    opt.save_plate = True
+    opt.save_plate = False
     opt.save_mask = False
     opt.save_bounding_boxes = False
-    opt.save_glyphs = False
-    opt.crop_to_content = True
-    opt.noise_labeling = True
-    opt.predefined_noises = False
+    opt.save_glyphs = True
+    opt.crop_to_content = False
+    opt.noise_labeling = False
+    opt.predefined_noises = True
     opt.mask_state = "grayscale"
 
     address = opt.address + os.sep if opt.address[-1] != os.sep else opt.address

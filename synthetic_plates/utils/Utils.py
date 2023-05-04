@@ -497,8 +497,8 @@ def visualization(main_image, images=None, boxes=None, waitKey=0):
         for box in boxes:
             x, y, w, h = box
             cv2.rectangle(main_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-    cv2.line(main_image, (0, 100), (200, 0), (0, 0, 255), 2)
-    cv2.line(main_image, (200, 0), (400, 100), (0, 0, 255), 2)
+    # cv2.line(main_image, (0, 100), (200, 0), (0, 0, 255), 2)
+    # cv2.line(main_image, (200, 0), (400, 100), (0, 0, 255), 2)
 
     cv2.imshow('main', main_image)
     if images is not None:

@@ -17,7 +17,7 @@ import os
 visualization = False
 test_size = 0.3
 # ['knn', 'mlp', 'nb', 'neater', 'voting', 'svm', 'rf']
-for method in ['knn', 'mlp', 'nb', 'neater', 'svm', 'rf']:
+for method in ['neater']:
     precisions = np.empty((0, 2), float)
     recalls = np.empty((0, 2), float)
     accuracies = []
@@ -37,9 +37,10 @@ for method in ['knn', 'mlp', 'nb', 'neater', 'svm', 'rf']:
         a = precision_score(y_true=y_test_noise, y_pred=y_pred_noises, average=None) + precision_score(
             y_true=y_test_rotation, y_pred=y_pred_rotations, average=None)
         precisions = np.append(precisions, [a / 2], axis=0)
-        a = recall_score(y_true=y_test_noise, y_pred=y_pred_noises, average=None) + recall_score(y_true=y_test_rotation,
-                                                                                                 y_pred=y_pred_rotations,
-                                                                                                 average=None)
+        a = recall_score(y_true=y_test_noise, y_pred=y_pred_noises, average=None) + recall_score(
+            y_true=y_test_rotation,
+            y_pred=y_pred_rotations,
+            average=None)
         recalls = np.append(recalls, [a / 2], axis=0)
         a = accuracy_score(y_true=y_test_noise, y_pred=y_pred_noises) + accuracy_score(y_true=y_test_rotation,
                                                                                        y_pred=y_pred_rotations)
@@ -83,6 +84,7 @@ for method in ['knn', 'mlp', 'nb', 'neater', 'svm', 'rf']:
     measures = {
         'method': method,
         'test_size': test_size,
+        'metric': 'euclidean',
         'accuracy(m)': np.mean(accuracies),
         'accuracy(v)': np.std(accuracies),
         'f1(m)': np.mean(f1s),
@@ -98,8 +100,9 @@ for method in ['knn', 'mlp', 'nb', 'neater', 'svm', 'rf']:
         '': ''
     }
     print(measures)
-    file_exists = os.path.isfile('results14.csv')
-    with open('results14.csv', 'a') as csvfile:
+    file_name = 'r(' + str(test_size * 100)  + ').csv'
+    file_exists = os.path.isfile(file_name)
+    with open(file_name, 'a') as csvfile:
         writer = csv.writer(csvfile)
         if not file_exists:
             writer.writerow(measures.keys())

@@ -152,7 +152,7 @@ class Evaluation:
 
         if sampling_strategy > 0:
             print("Balancing...")
-            oversample = RandomOverSampler(sampling_strategy=sampling_strategy)
+            oversample = RandomOverSampler(sampling_strategy=sampling_strategy, random_state=42)
             X_train, y_train = oversample.fit_resample(X_train, y_train)
 
         # print('0 class in train oversampled: %d' % np.sum(y_train == 0))
@@ -195,11 +195,12 @@ class Evaluation:
             y_pred_noises = self.neater(self.X_train_noise, self.X_test_noise,
                                         self.y_train_noise, self.y_test_noise,
                                         h=2, b=40, alpha=1, sampling_strategy=1,
-                                        metric='mahalanobis')
-            y_pred_rotations = self.neater(self.X_train_rotation, self.X_test_rotation,
-                                           self.y_train_rotation, self.y_test_rotation,
-                                           h=4, b=40, alpha=1, sampling_strategy=0.6,
-                                           metric='mahalanobis')
+                                        metric='euclidean')
+            # y_pred_rotations = self.neater(self.X_train_rotation, self.X_test_rotation,
+            #                                self.y_train_rotation, self.y_test_rotation,
+            #                                h=4, b=40, alpha=1, sampling_strategy=0.6,
+            #                                metric='euclidean')
+            y_pred_rotations = y_pred_noises
         else:
             y_pred_noises = getattr(self, method)(self.X_train_noise, self.X_test_noise,
                                                   self.y_train_noise, self.y_test_noise)

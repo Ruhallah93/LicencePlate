@@ -85,8 +85,8 @@ def save_glyphs_(store_address, plate, perspective_plate, bonding_boxes, glyph_s
         cv2.imwrite(store_directory + char + os.sep + _id + ".png", np.array(w_background))
 
 
-dataset_path = "/home/ruhiii/Downloads/CharFinder/final_data_set_repaired_sub/"
-save_path = "/home/ruhiii/Downloads/CharFinder/glyphs_sub_digit/"
+dataset_path = "/Users/rouhollah/PycharmProjects/LicencePlate/Datasets/data/full/train/"
+save_path = "/Users/rouhollah/PycharmProjects/LicencePlate/Datasets/data/alphabet+digit/train/"
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 for path in tqdm(glob.glob(dataset_path + "*.txt")):
@@ -114,10 +114,10 @@ for path in tqdm(glob.glob(dataset_path + "*.txt")):
         boxes = boxes.astype(np.int).tolist()
 
     # visualization(img, boxes=boxes)
-    # save_glyphs_(store_address=save_path,
-    #              plate=plate,
-    #              perspective_plate=img,
-    #              bonding_boxes=boxes,
-    #              glyph_size=(32, 32),
-    #              glyph_state='colorful',
-    #              save_mode="digit")
+    save_glyphs_(store_address=save_path,
+                 plate=plate,
+                 perspective_plate=img,
+                 bonding_boxes=boxes,
+                 glyph_size=(32, 32),
+                 glyph_state='colorful',
+                 save_mode="alphabet+digit")

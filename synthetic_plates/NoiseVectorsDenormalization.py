@@ -4,7 +4,7 @@ import os
 
 ranges = pd.read_csv("utils/noise/noises_parameters_ranges.csv")
 ranges.set_index("Name", inplace=True)
-address = "ImageFiltering/labeled_data/mlp/"
+address = "ImageFiltering/labeled_data/neater/"
 nvs = pd.read_csv(address + "normalized_noise_vectors.csv")
 
 

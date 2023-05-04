@@ -195,7 +195,7 @@ def get_perspective_matrix2(width, height, thetas):
                       [p4[0], p4[1]]])
 
     direction = np.random.choice([1, -1])
-    step_length = thetas['roll']
+    step_length = thetas['pitch']
     p1, p2, p3, p4 = pitch(p1, p2, p3, p4, type=direction, const_h=step_length)
     step_length = thetas['yaw']
     p1, p2, p3, p4 = yaw(p1, p2, p3, p4, type=direction, const_h=step_length)
@@ -256,6 +256,7 @@ def create_perspective(img, mask,
     # Apply noises
     for noise in noises:
         before_altering = noise.apply(before_altering)
+    # visualization(before_altering)
 
     before_altering, mask, combined_boxed = set_background(before_altering, mask, combined_boxed,
                                                            background_size=img_size,
@@ -288,6 +289,8 @@ def create_perspective(img, mask,
 
     new_plate_box = apply_transform(matrix, [plate_box])
     new_glyph_boxes = apply_transform(matrix, glyph_boxes)
+
+    # visualization(before_altering)
 
     return before_altering, imgOutput, new_glyph_boxes, new_plate_box[0]
 
