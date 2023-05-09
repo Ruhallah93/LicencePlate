@@ -21,3 +21,4 @@
 3. <img src="https://avatars.githubusercontent.com/u/31305676?v=4" width="100" height="100"> Amin Rahmani 
 4. <img src="https://avatars.githubusercontent.com/u/35023234?v=4" width="100" height="100"> Mahdi Bideh 
 5. <img src="https://avatars.githubusercontent.com/u/14013230?v=4" width="100" height="100"> Pouya Parsa 
+6. <img src="[https://avatars.githubusercontent.com/u/14013230?v=4](https://media.licdn.com/dms/image/C4E03AQEtlBHeRDzC3g/profile-displayphoto-shrink_400_400/0/1657193558069?e=1689206400&v=beta&t=zFjJ18zv4Ic8fR97hvjSMfg98gvas0TeVEQl979-ihc)" width="100" height="100"> Seyedeh Sara Jalili
