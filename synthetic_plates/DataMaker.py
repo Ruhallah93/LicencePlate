@@ -241,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--noise_labeling', action='store_true', help='save the masks if true')
     parser.add_argument('--predefined_noises', action='store_true', help='generate random noises. false: read from csv')
     parser.add_argument('--predefined_noises_file', type=str,
-                        default='ImageFiltering/labeled_data/nb/denormalized_noise_vectors.csv')
+                        default='ImageFiltering/labeled_data/geris/denormalized_noise_vectors.csv')
     parser.add_argument('--noise_ranges', type=str, default='utils/noise/noises_parameters_ranges.csv')
     opt = parser.parse_args()
 

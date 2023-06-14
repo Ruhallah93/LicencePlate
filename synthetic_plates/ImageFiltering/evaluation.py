@@ -17,7 +17,7 @@ import os
 visualization = False
 test_size = 0.3
 # ['knn', 'mlp', 'nb', 'neater', 'voting', 'svm', 'rf']
-for method in ['neater']:
+for method in ['geris' , 'neater']:
     precisions = np.empty((0, 2), float)
     recalls = np.empty((0, 2), float)
     accuracies = []

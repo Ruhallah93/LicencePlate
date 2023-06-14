@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 import numpy as np
 
 from synthetic_plates.ImageFiltering.utils.NEATER import NEATER
+from synthetic_plates.ImageFiltering.utils.GERIS import GERIS
+from synthetic_plates.ImageFiltering.utils.GERISPRIME import GERISPRIME
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -163,6 +165,34 @@ class Evaluation:
 
         return y_pred
 
+    def geris(self, X_train, X_test, y_train, y_test, h, b, alpha, sampling_strategy, metric):
+
+        if sampling_strategy > 0:
+            print("Balancing...")
+            oversample = RandomOverSampler(sampling_strategy=sampling_strategy, random_state=42)
+            X_train, y_train = oversample.fit_resample(X_train, y_train)
+
+        # print('0 class in train oversampled: %d' % np.sum(y_train == 0))
+        # print('1 class in train oversampled: %d' % np.sum(y_train == 1))
+
+        geris = GERIS(alpha=alpha, h=h, b=b)
+        X_pred, y_pred = geris.sample(X_train, y_train, X_test, y_test, data_produced=0, metric=metric)
+
+        return y_pred
+    def geris_regret(self, X_train, X_test, y_train, y_test, h, b, alpha, sampling_strategy, metric):
+
+        if sampling_strategy > 0:
+            print("Balancing...")
+            oversample = RandomOverSampler(sampling_strategy=sampling_strategy, random_state=42)
+            X_train, y_train = oversample.fit_resample(X_train, y_train)
+
+        # print('0 class in train oversampled: %d' % np.sum(y_train == 0))
+        # print('1 class in train oversampled: %d' % np.sum(y_train == 1))
+
+        geris_regret = GERISPRIME(alpha=alpha, h=h, b=b)
+        X_pred, y_pred = geris_regret.sample(X_train, y_train, X_test, y_test, data_produced=0, metric=metric)
+
+        return y_pred
     def voting(self, X_train, X_test, y_train, y_test):
         _, _, _, y_test, y_pred1 = self.run('mlp')
         _, _, _, y_test, y_pred2 = self.run('nb')
@@ -194,13 +224,32 @@ class Evaluation:
 
             y_pred_noises = self.neater(self.X_train_noise, self.X_test_noise,
                                         self.y_train_noise, self.y_test_noise,
-                                        h=2, b=40, alpha=1, sampling_strategy=1,
+                                        h=10, b=40, alpha=1, sampling_strategy=1,
                                         metric='euclidean')
-            # y_pred_rotations = self.neater(self.X_train_rotation, self.X_test_rotation,
-            #                                self.y_train_rotation, self.y_test_rotation,
-            #                                h=4, b=40, alpha=1, sampling_strategy=0.6,
-            #                                metric='euclidean')
-            y_pred_rotations = y_pred_noises
+            y_pred_rotations = self.neater(self.X_train_rotation, self.X_test_rotation,
+                                           self.y_train_rotation, self.y_test_rotation,
+                                           h=10, b=40, alpha=1, sampling_strategy=0.6,
+                                           metric='euclidean')
+        elif method == 'geris':
+            # for i in range(4, 11):
+            #     for j in range(4, 11):
+            #         y_pred_noises = self.neater(self.X_train_noise, self.X_test_noise,
+            #                                     self.y_train_noise, self.y_test_noise,
+            #                                     h=6, alpha=1, sampling_strategy=i / 10)
+            #         y_pred_rotations = self.neater(self.X_train_rotation, self.X_test_rotation,
+            #                                        self.y_train_rotation, self.y_test_rotation,
+            #                                        h=4, alpha=1, sampling_strategy=j / 10)
+            #         y_pred = y_pred_noises * y_pred_rotations
+            #         print(i, j, recall_score(y_true=self.y_test, y_pred=y_pred, average=None)[0])
+
+            y_pred_noises = self.geris(self.X_train_noise, self.X_test_noise,
+                                        self.y_train_noise, self.y_test_noise,
+                                        h=4, b=40, alpha=0.9, sampling_strategy=1,
+                                        metric='euclidean')
+            y_pred_rotations = self.geris(self.X_train_rotation, self.X_test_rotation,
+                                           self.y_train_rotation, self.y_test_rotation,
+                                           h=4, b=40, alpha=0.9, sampling_strategy=0.6,
+                                           metric='euclidean')
         else:
             y_pred_noises = getattr(self, method)(self.X_train_noise, self.X_test_noise,
                                                   self.y_train_noise, self.y_test_noise)
