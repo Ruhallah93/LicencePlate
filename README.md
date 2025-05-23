@@ -16,9 +16,8 @@
 7. Capsule-Net for character classification.
 
 **Team**
-1. <img src="https://avatars.githubusercontent.com/u/45070080?v=4" width="100" height="100"> Dr. Mahdi Ghatee (Head)
-2. <img src="https://avatars.githubusercontent.com/u/7311445?s=400&u=b06ef2b458b4bc48efbfb0557a8f30dab4bf8afd&v=4" width="100" height="100"> Rouhollah Ahmadian
-3. <img src="https://avatars.githubusercontent.com/u/31305676?v=4" width="100" height="100"> Amin Rahmani 
-4. <img src="https://avatars.githubusercontent.com/u/35023234?v=4" width="100" height="100"> Mahdi Bideh 
-5. <img src="https://avatars.githubusercontent.com/u/14013230?v=4" width="100" height="100"> Pouya Parsa 
-6. <img src="https://media.licdn.com/dms/image/C4E03AQEtlBHeRDzC3g/profile-displayphoto-shrink_400_400/0/1657193558069?e=1689206400&v=beta&t=zFjJ18zv4Ic8fR97hvjSMfg98gvas0TeVEQl979-ihc" width="100" height="100"> Seyedeh Sara Jalili
+1. <img src="https://avatars.githubusercontent.com/u/7311445?s=400&u=b06ef2b458b4bc48efbfb0557a8f30dab4bf8afd&v=4" width="100" height="100"> [Rouhollah Ahmadian](https://github.com/Ruhallah93)
+2. <img src="https://avatars.githubusercontent.com/u/31305676?v=4" width="100" height="100"> [Amin Rahmani](https://github.com/aminra96)
+3. <img src="https://avatars.githubusercontent.com/u/35023234?v=4" width="100" height="100"> [Mahdi Bideh](https://github.com/mahdi76911)
+4. <img src="https://avatars.githubusercontent.com/u/14013230?v=4" width="100" height="100"> [Pouya Parsa](https://github.com/pouya-parsa)
+5. <img src="https://avatars.githubusercontent.com/u/98711738?v=4" width="100" height="100"> [Seyedeh Sara Jalili](https://github.com/sara-jalili)
